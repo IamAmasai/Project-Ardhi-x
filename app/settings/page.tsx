@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useTheme } from "next-themes"
 
 export default function SettingsPage() {
-  const { user, updateUser } = useAuth()
+  const { user, updateUser, loading } = useAuth()
   const { theme, setTheme } = useTheme()
   const { toast } = useToast()
   const [isSaving, setIsSaving] = useState(false)
@@ -83,11 +83,23 @@ export default function SettingsPage() {
     })
   }
 
-  if (!user) {
+  if (loading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
           <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (!user) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <p className="text-muted-foreground">Please log in to access settings.</p>
+          </div>
         </div>
       </DashboardLayout>
     )

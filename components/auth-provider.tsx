@@ -44,6 +44,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (storedUser) {
           setUser(JSON.parse(storedUser))
+        } else {
+          // For demo purposes, automatically create a mock user
+          const mockUser = {
+            id: "user_123",
+            name: "John Doe",
+            email: "john.doe@example.com",
+            role: "user",
+            avatar: "/placeholder-user.jpg",
+            phone: "+254 712 345 678",
+            nationalId: "KE123456789",
+            bio: "Land registry user with multiple properties in Kenya",
+            location: "Nairobi, Kenya",
+            dateJoined: "2023-01-15",
+          }
+          localStorage.setItem("ardhix_user", JSON.stringify(mockUser))
+          setUser(mockUser)
         }
       } catch (error) {
         console.error("Session check failed:", error)
@@ -55,15 +71,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkSession()
   }, [])
 
-  // Protect routes
+  // Protect routes - only redirect to login for auth pages when user exists
   useEffect(() => {
     if (!loading) {
-      const publicPaths = ["/", "/auth/sign-up", "/auth/forgot-password", "/auth/reset-password"]
-      const isPublicPath = publicPaths.some((path) => pathname === path || pathname.startsWith(path))
+      const authPaths = ["/auth/sign-up", "/auth/forgot-password", "/auth/reset-password"]
+      const isAuthPath = authPaths.some((path) => pathname === path || pathname.startsWith(path))
 
-      if (!user && !isPublicPath) {
-        router.push("/")
+      // Only redirect to dashboard if user is trying to access auth pages while logged in
+      if (user && isAuthPath) {
+        router.push("/dashboard")
       }
+      // For demo purposes, we don't redirect to login page since user is auto-created
     }
   }, [user, loading, pathname, router])
 
