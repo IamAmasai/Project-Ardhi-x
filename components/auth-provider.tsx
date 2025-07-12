@@ -10,12 +10,20 @@ type User = {
   name: string
   email: string
   role: string
+  avatar?: string
+  phone?: string
+  nationalId?: string
+  bio?: string
+  location?: string
+  dateJoined?: string
 } | null
 
 type AuthContextType = {
   user: User
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
+  updateUser: (updates: Partial<Exclude<User, null>>) => void
+  uploadAvatar: (file: File) => Promise<string>
   loading: boolean
 }
 
@@ -69,6 +77,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name: "John Doe",
         email: email,
         role: "user",
+        avatar: "/placeholder-user.jpg",
+        phone: "+254 712 345 678",
+        nationalId: "KE123456789",
+        bio: "Land registry user with multiple properties in Kenya",
+        location: "Nairobi, Kenya",
+        dateJoined: "2023-01-15",
       }
 
       // Store user in localStorage for persistence
@@ -83,13 +97,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const updateUser = (updates: Partial<Exclude<User, null>>) => {
+    if (!user) return
+    
+    const updatedUser = { ...user, ...updates }
+    setUser(updatedUser)
+    localStorage.setItem("ardhix_user", JSON.stringify(updatedUser))
+  }
+
+  const uploadAvatar = async (file: File): Promise<string> => {
+    // In a real app, this would upload to a file storage service
+    // For demo purposes, we'll create a fake URL and update the user
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const fakeUrl = `/avatars/user_${user?.id}_${Date.now()}.jpg`
+        updateUser({ avatar: fakeUrl })
+        resolve(fakeUrl)
+      }, 1500) // Simulate upload delay
+    })
+  }
+
   const logout = () => {
     localStorage.removeItem("ardhix_user")
     setUser(null)
     router.push("/")
   }
 
-  return <AuthContext.Provider value={{ user, login, logout, loading }}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={{ user, login, logout, updateUser, uploadAvatar, loading }}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
