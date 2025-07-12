@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Map, FileText, History, Settings, ChevronRight } from "lucide-react"
+import { Home, Map, MapPin, FileText, History, Settings, ChevronRight } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -24,6 +24,11 @@ export function SidebarNav({ className }: SidebarNavProps) {
       name: "Dashboard",
       href: "/dashboard",
       icon: Home,
+    },
+    {
+      name: "Properties",
+      href: "/properties",
+      icon: MapPin,
     },
     {
       name: "Map",

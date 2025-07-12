@@ -89,9 +89,11 @@ export default function PropertiesPage() {
             <h1 className="text-3xl font-bold tracking-tight">Properties</h1>
             <p className="text-muted-foreground">Manage your land properties</p>
           </div>
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add Property
+          <Button className="flex items-center gap-2" asChild>
+            <Link href="/properties/add">
+              <Plus className="h-4 w-4" />
+              Add Property
+            </Link>
           </Button>
         </div>
 

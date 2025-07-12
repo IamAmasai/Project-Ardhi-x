@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -118,10 +119,10 @@ export default function TransferOwnershipPage({ params }: { params: { id: string
 
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" asChild>
-                    <a href={`/properties/${params.id}`}>
+                    <Link href={`/properties/${params.id}`}>
                       <ArrowLeft className="mr-2 h-4 w-4" />
                       Back
-                    </a>
+                    </Link>
                   </Button>
                   <Button>
                     Next
@@ -305,10 +306,10 @@ export default function TransferOwnershipPage({ params }: { params: { id: string
                 </div>
                 <div className="flex gap-4">
                   <Button variant="outline" asChild>
-                    <a href="/dashboard">Go to Dashboard</a>
+                    <Link href="/dashboard">Go to Dashboard</Link>
                   </Button>
                   <Button asChild>
-                    <a href={`/properties/${params.id}`}>View Property</a>
+                    <Link href={`/properties/${params.id}`}>View Property</Link>
                   </Button>
                 </div>
               </CardContent>
