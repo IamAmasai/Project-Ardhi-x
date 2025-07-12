@@ -14,12 +14,12 @@ export const metadata: Metadata = {
 export default function DashboardPage() {
   return (
     <DashboardLayout>
-      <div className="space-y-8">
+      <div className="space-y-6 md:space-y-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Welcome back, John Doe</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome back, John Doe</h1>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Card className="transition-all hover:shadow-md">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">My Properties</CardTitle>
@@ -65,7 +65,7 @@ export default function DashboardPage() {
             </Button>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
             <Card className="overflow-hidden transition-all hover:shadow-md">
               <CardContent className="p-0">
                 <div className="aspect-video bg-muted relative">
