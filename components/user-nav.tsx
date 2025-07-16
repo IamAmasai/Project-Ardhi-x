@@ -22,19 +22,33 @@ export function UserNav() {
     logout()
   }
 
+  const renderAvatarContent = () => {
+    return (
+      <>
+        <AvatarImage src={user?.avatar} alt={user?.name || "User"} />
+        <AvatarFallback>
+          {user?.name
+            ?.split(" ")
+            .map((n) => n[0])
+            .join("") || "U"}
+        </AvatarFallback>
+      </>
+    );
+  };
+
+  const renderAvatar = () => {
+    return (
+      <Avatar className="h-8 w-8">
+        {renderAvatarContent()}
+      </Avatar>
+    );
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={user?.avatar} alt={user?.name || "User"} />
-            <AvatarFallback>
-              {user?.name
-                ?.split(" ")
-                .map((n) => n[0])
-                .join("") || "U"}
-            </AvatarFallback>
-          </Avatar>
+          {renderAvatar()}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>

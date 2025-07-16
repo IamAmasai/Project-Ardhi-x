@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`font-sans ${inter.variable}`}>
+      <body className={`font-sans ${inter.variable}`} suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <AuthProvider>
             {children}

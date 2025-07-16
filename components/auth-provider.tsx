@@ -1,68 +1,38 @@
 "use client"
 
 import type React from "react"
-
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState, useEffect, useRef } from "react"
 import { useRouter, usePathname } from "next/navigation"
-
-type User = {
-  id: string
-  name: string
-  email: string
-  role: string
-  avatar?: string
-  phone?: string
-  nationalId?: string
-  bio?: string
-  location?: string
-  dateJoined?: string
-} | null
-
-type AuthContextType = {
-  user: User
-  login: (email: string, password: string) => Promise<boolean>
-  logout: () => void
-  updateUser: (updates: Partial<Exclude<User, null>>) => void
-  uploadAvatar: (file: File) => Promise<string>
-  loading: boolean
-}
+import { User, AuthContextType, RegisterData, Property, UserStats } from "@/types/auth"
+import { PropertyService } from "@/lib/property-service"
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
+  const redirectingRef = useRef(false)
 
-  // Simulate checking for an existing session on mount
+  // Check for existing session on mount
   useEffect(() => {
-    const checkSession = async () => {
+    const checkSession = () => {
       try {
-        // In a real app, this would be an API call to validate the session
-        const storedUser = localStorage.getItem("ardhix_user")
-
-        if (storedUser) {
-          setUser(JSON.parse(storedUser))
-        } else {
-          // For demo purposes, automatically create a mock user
-          const mockUser = {
-            id: "user_123",
-            name: "John Doe",
-            email: "john.doe@example.com",
-            role: "user",
-            avatar: "/placeholder-user.jpg",
-            phone: "+254 712 345 678",
-            nationalId: "KE123456789",
-            bio: "Land registry user with multiple properties in Kenya",
-            location: "Nairobi, Kenya",
-            dateJoined: "2023-01-15",
+        // Only check localStorage on client side
+        if (typeof window !== 'undefined') {
+          const storedUser = localStorage.getItem('authUser')
+          if (storedUser) {
+            const userData = JSON.parse(storedUser)
+            setUser(userData)
           }
-          localStorage.setItem("ardhix_user", JSON.stringify(mockUser))
-          setUser(mockUser)
         }
       } catch (error) {
         console.error("Session check failed:", error)
+        // Clear corrupted localStorage only on client side
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('authUser')
+        }
       } finally {
         setLoading(false)
       }
@@ -71,77 +41,211 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkSession()
   }, [])
 
-  // Protect routes - only redirect to login for auth pages when user exists
+  // Protect routes (temporarily disabled for debugging)
   useEffect(() => {
-    if (!loading) {
-      const authPaths = ["/auth/sign-up", "/auth/forgot-password", "/auth/reset-password"]
-      const isAuthPath = authPaths.some((path) => pathname === path || pathname.startsWith(path))
+    if (!loading && !redirectingRef.current) {
+      const publicPaths = ["/", "/auth/sign-up", "/auth/forgot-password", "/auth/reset-password"]
+      const isPublicPath = publicPaths.some((path) => pathname === path || pathname.startsWith(path))
 
-      // Only redirect to dashboard if user is trying to access auth pages while logged in
-      if (user && isAuthPath) {
-        router.push("/dashboard")
+      console.log("Route protection check:", { user: !!user, pathname, isPublicPath, loading })
+
+      if (!user && !isPublicPath) {
+        console.log("Would redirect to login - no user on protected route")
+        // redirectingRef.current = true
+        // router.replace("/")
+        // setTimeout(() => { redirectingRef.current = false }, 1000)
+      } else if (user && pathname === "/" && !redirectingRef.current) {
+        console.log("User logged in but route protection disabled for debugging")
+        // Don't auto-redirect, let login function handle it
       }
-      // For demo purposes, we don't redirect to login page since user is auto-created
     }
   }, [user, loading, pathname, router])
 
   const login = async (email: string, password: string) => {
+    console.log("AuthProvider login function called with:", email)
     setLoading(true)
     try {
-      // In a real app, this would be an API call to authenticate
-      // Simulating a successful login for demo purposes
-      const mockUser = {
-        id: "user_123",
-        name: "John Doe",
+      // Simple working mock for development
+      const mockUser: User = {
+        id: "admin_001",
         email: email,
+        name: email.split('@')[0] || "Test User",
+        phone: "+254700000000",
+        nationalId: "12345678",
         role: "user",
-        avatar: "/placeholder-user.jpg",
-        phone: "+254 712 345 678",
-        nationalId: "KE123456789",
-        bio: "Land registry user with multiple properties in Kenya",
-        location: "Nairobi, Kenya",
-        dateJoined: "2023-01-15",
+        dateJoined: new Date().toISOString()
       }
 
-      // Store user in localStorage for persistence
-      localStorage.setItem("ardhix_user", JSON.stringify(mockUser))
+      console.log("Setting user data:", mockUser)
+
+      // Only access localStorage on client side
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('authUser', JSON.stringify(mockUser))
+        console.log("Saved user to localStorage")
+      }
+      
       setUser(mockUser)
-      return true
+      setLoading(false)
+      console.log("User state updated, scheduling redirect...")
+      
+      // Direct redirect after successful login
+      setTimeout(() => {
+        console.log("Executing redirect to dashboard")
+        if (typeof window !== 'undefined') {
+          console.log("Current location:", window.location.href)
+          window.location.href = "/dashboard"
+        }
+      }, 100)
+      
+      return { success: true }
     } catch (error) {
-      console.error("Login failed:", error)
-      return false
+      console.error("Login error:", error)
+      setLoading(false)
+      return { success: false, error: 'Login failed' }
+    }
+  }
+
+  const register = async (userData: RegisterData) => {
+    setLoading(true)
+    try {
+      // Simple mock registration for development
+      const mockUser: User = {
+        id: "admin_001", // Match the sample property data
+        email: userData.email,
+        name: userData.name,
+        phone: userData.phone,
+        nationalId: userData.nationalId,
+        role: "user",
+        dateJoined: new Date().toISOString()
+      }
+
+      // Only access localStorage on client side
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('authUser', JSON.stringify(mockUser))
+      }
+      
+      setUser(mockUser)
+      return { success: true }
+    } catch (error) {
+      console.error("Registration failed:", error)
+      return { success: false, error: 'Network error. Please try again.' }
     } finally {
       setLoading(false)
     }
   }
 
-  const updateUser = (updates: Partial<Exclude<User, null>>) => {
-    if (!user) return
-    
-    const updatedUser = { ...user, ...updates }
-    setUser(updatedUser)
-    localStorage.setItem("ardhix_user", JSON.stringify(updatedUser))
+  const logout = async () => {
+    try {
+      // Only access localStorage on client side
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('authUser')
+      }
+    } catch (error) {
+      console.error("Logout error:", error)
+    } finally {
+      setUser(null)
+      router.push("/")
+    }
+  }
+
+  const updateUser = async (updates: Partial<User>) => {
+    if (!user) return { success: false, error: 'No user logged in' }
+
+    try {
+      // For now, just update locally - in production, make API call
+      const updatedUser = { ...user, ...updates }
+      setUser(updatedUser)
+      return { success: true }
+    } catch (error) {
+      console.error("Update user failed:", error)
+      return { success: false, error: 'Failed to update user' }
+    }
   }
 
   const uploadAvatar = async (file: File): Promise<string> => {
-    // In a real app, this would upload to a file storage service
-    // For demo purposes, we'll create a fake URL and update the user
+    // Simulate file upload - in production, upload to cloud storage
     return new Promise((resolve) => {
       setTimeout(() => {
-        const fakeUrl = `/avatars/user_${user?.id}_${Date.now()}.jpg`
-        updateUser({ avatar: fakeUrl })
-        resolve(fakeUrl)
-      }, 1500) // Simulate upload delay
+        const newAvatarUrl = `/placeholder-user.jpg?${Date.now()}`
+        if (user) {
+          setUser({ ...user, avatar: newAvatarUrl })
+        }
+        resolve(newAvatarUrl)
+      }, 1000)
     })
   }
 
-  const logout = () => {
-    localStorage.removeItem("ardhix_user")
-    setUser(null)
-    router.push("/")
+  const resetPassword = async (email: string) => {
+    try {
+      // Mock password reset for development
+      // In production, this would send an actual email
+      console.log(`Password reset requested for: ${email}`)
+      
+      // Simulate successful email sending
+      return { success: true }
+    } catch (error) {
+      console.error("Reset password failed:", error)
+      return { success: false, error: 'Network error. Please try again.' }
+    }
   }
 
-  return <AuthContext.Provider value={{ user, login, logout, updateUser, uploadAvatar, loading }}>{children}</AuthContext.Provider>
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    try {
+      // In production, implement password change API endpoint
+      return { success: true }
+    } catch (error) {
+      console.error("Change password failed:", error)
+      return { success: false, error: 'Failed to change password' }
+    }
+  }
+
+  const getUserStats = (): UserStats => {
+    if (!user) {
+      return {
+        totalProperties: 0,
+        verifiedProperties: 0,
+        pendingProperties: 0,
+        pendingDocuments: 0,
+        totalValue: 0,
+        currency: 'KES'
+      }
+    }
+    return PropertyService.getUserStats(user.id)
+  }
+
+  const getUserProperties = (): Property[] => {
+    if (!user) return []
+    return PropertyService.getUserProperties(user.id)
+  }
+
+  const addProperty = async (propertyData: Omit<Property, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+    if (!user) return { success: false, error: 'No user logged in' }
+
+    try {
+      PropertyService.addProperty(user.id, propertyData)
+      return { success: true }
+    } catch (error) {
+      console.error("Add property failed:", error)
+      return { success: false, error: 'Failed to add property' }
+    }
+  }
+
+  const value: AuthContextType = {
+    user,
+    login,
+    register,
+    logout,
+    updateUser,
+    uploadAvatar,
+    resetPassword,
+    changePassword,
+    getUserStats,
+    getUserProperties,
+    addProperty,
+    loading,
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

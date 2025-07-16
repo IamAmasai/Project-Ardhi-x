@@ -1,6 +1,9 @@
+"use client"
+
 import type { Metadata } from "next"
 import Link from "next/link"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { useAuth } from "@/components/auth-provider"
 import { PropertyImage } from "@/components/property-image"
 import { ListImage } from "@/components/list-image"
 import { Card, CardContent } from "@/components/ui/card"
@@ -19,69 +22,22 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-export const metadata: Metadata = {
-  title: "Properties | ArdhiX Land Registry System",
-  description: "Properties listing for the ArdhiX Land Registry System",
-}
-
 export default function PropertiesPage() {
-  // Sample properties data
-  const properties = [
-    {
-      id: "xyz123456",
-      title: "Residential Plot",
-      location: "Nairobi, Kenya",
-      size: "2.5 Acres",
-      status: "verified",
-      lastUpdated: "Yesterday",
-      image: "/placeholder.svg?height=200&width=300",
-    },
-    {
-      id: "abc789012",
-      title: "Commercial Land",
-      location: "Mombasa, Kenya",
-      size: "1.2 Acres",
-      status: "pending",
-      lastUpdated: "3 days ago",
-      image: "/placeholder.svg?height=200&width=300",
-    },
-    {
-      id: "def345678",
-      title: "Agricultural Land",
-      location: "Nakuru, Kenya",
-      size: "5.0 Acres",
-      status: "rejected",
-      lastUpdated: "1 week ago",
-      image: "/placeholder.svg?height=200&width=300",
-    },
-    {
-      id: "ghi901234",
-      title: "Urban Plot",
-      location: "Kisumu, Kenya",
-      size: "0.8 Acres",
-      status: "verified",
-      lastUpdated: "2 weeks ago",
-      image: "/placeholder.svg?height=200&width=300",
-    },
-    {
-      id: "jkl567890",
-      title: "Beachfront Property",
-      location: "Malindi, Kenya",
-      size: "3.5 Acres",
-      status: "pending",
-      lastUpdated: "1 month ago",
-      image: "/placeholder.svg?height=200&width=300",
-    },
-    {
-      id: "mno123456",
-      title: "Forest Land",
-      location: "Eldoret, Kenya",
-      size: "10.0 Acres",
-      status: "verified",
-      lastUpdated: "2 months ago",
-      image: "/placeholder.svg?height=200&width=300",
-    },
-  ]
+  const { getUserProperties, loading } = useAuth()
+  const properties = getUserProperties()
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+            <p>Loading properties...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   return (
     <DashboardLayout>
@@ -154,12 +110,13 @@ export default function PropertiesPage() {
           </div>
 
           <TabsContent value="grid" className="mt-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-              {properties.map((property) => (
+            {properties.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                {properties.map((property) => (
                 <Card key={property.id} className="overflow-hidden transition-all hover:shadow-md">
                   <CardContent className="p-0">
                     <PropertyImage 
-                      src={property.image}
+                      src="/placeholder.svg"
                       alt={property.title}
                       className="w-full h-full object-cover"
                     />
@@ -190,7 +147,9 @@ export default function PropertiesPage() {
                             <span className="text-xs">Rejected</span>
                           </Badge>
                         )}
-                        <span className="text-xs text-muted-foreground ml-auto">Updated {property.lastUpdated}</span>
+                        <span className="text-xs text-muted-foreground ml-auto">
+                          Updated {new Date(property.updatedAt).toLocaleDateString()}
+                        </span>
                       </div>
                       <div className="flex flex-col sm:flex-row gap-2">
                         <Button variant="outline" size="sm" asChild className="flex-1 text-xs">
@@ -203,19 +162,34 @@ export default function PropertiesPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          </TabsContent>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="mx-auto mb-4">
+                    <Search className="h-12 w-12 text-muted-foreground/50 mx-auto" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">No Properties Found</h3>
+                  <p className="text-muted-foreground mb-4">
+                    You haven't added any properties yet. Start building your land portfolio today.
+                  </p>
+                  <Button asChild>
+                    <Link href="/properties/add">Add Your First Property</Link>
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
 
           <TabsContent value="list" className="mt-4">
             <Card>
               <CardContent className="p-0">
-                <div className="divide-y">
-                  {properties.map((property) => (
+                {properties.length > 0 ? (
+                  <div className="divide-y">
+                    {properties.map((property) => (
                     <div key={property.id} className="flex flex-col sm:flex-row sm:items-center p-4 hover:bg-muted/50 transition-colors gap-4">
                       <div className="h-16 w-16 bg-muted rounded-md flex items-center justify-center overflow-hidden shrink-0 mx-auto sm:mx-0">
                         <ListImage 
-                          src={property.image}
+                          src="/placeholder.svg"
                           alt={property.title}
                           className="w-full h-full object-cover"
                         />
@@ -251,8 +225,22 @@ export default function PropertiesPage() {
                         </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="mx-auto mb-4">
+                      <Search className="h-12 w-12 text-muted-foreground/50 mx-auto" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">No Properties Found</h3>
+                    <p className="text-muted-foreground mb-4">
+                      You haven't added any properties yet. Start building your land portfolio today.
+                    </p>
+                    <Button asChild>
+                      <Link href="/properties/add">Add Your First Property</Link>
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

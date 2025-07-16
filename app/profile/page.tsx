@@ -1,6 +1,5 @@
 "use client"
 
-import type { Metadata } from "next"
 import { useState } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,24 +12,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/components/auth-provider"
 import { User, Mail, Shield, Upload, Camera, Save, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-
-// We can't export metadata from client components, so we'll remove it
+import type { User as UserType } from "@/types/auth"
 
 export default function ProfilePage() {
-  const { user, updateUser, uploadAvatar } = useAuth()
-  const { toast } = useToast()
-  const [isUploading, setIsUploading] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  
+  const { user, updateUser, uploadAvatar } = useAuth();
+  const { toast } = useToast();
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  function initializeFormData(user: UserType | null) {
+    return {
+      name: getUserProperty(user, 'name'),
+      email: getUserProperty(user, 'email'),
+      phone: getUserProperty(user, 'phone'),
+      nationalId: getUserProperty(user, 'nationalId'),
+      bio: getUserProperty(user, 'bio'),
+      location: getUserProperty(user, 'location'),
+    };
+  }
+
+  function getUserProperty(user: UserType | null, property: keyof UserType) {
+    return (user?.[property] as string) || "";
+  }
+
   // Form state
-  const [formData, setFormData] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-    phone: user?.phone || "",
-    nationalId: user?.nationalId || "",
-    bio: user?.bio || "",
-    location: user?.location || "",
-  })
+  const [formData, setFormData] = useState(initializeFormData(user));
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))

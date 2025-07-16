@@ -1,5 +1,9 @@
-import type { Metadata } from "next"
+"use client"
+
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { useAuth } from "@/components/auth-provider"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -7,17 +11,228 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { MapComponent } from "@/components/map-component"
+import { PropertyLocationMap } from "@/components/property-location-map"
 import { DocumentUpload } from "@/components/document-upload"
-import { ArrowLeft, Save } from "lucide-react"
+import { ArrowLeft, Save, MapPin, Upload, FileText, Loader2, CheckCircle } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { KENYA_COUNTIES, getWardsByCounty } from "@/lib/kenya-locations"
 import Link from "next/link"
 
-export const metadata: Metadata = {
-  title: "Add Property | ArdhiX Land Registry System",
-  description: "Add a new property to the ArdhiX Land Registry System",
+interface PropertyFormData {
+  title: string
+  type: 'residential' | 'commercial' | 'agricultural' | 'industrial' | ''
+  county: string
+  ward: string
+  location: string
+  physicalAddress: string
+  size: string
+  registrationNumber: string
+  description: string
+  value: string
+  currency: string
+  coordinates: {
+    lat: number | null
+    lng: number | null
+  }
+}
+
+const initialFormData: PropertyFormData = {
+  title: "",
+  type: "",
+  county: "",
+  ward: "",
+  location: "",
+  physicalAddress: "",
+  size: "",
+  registrationNumber: "",
+  description: "",
+  value: "",
+  currency: "KES",
+  coordinates: {
+    lat: null,
+    lng: null
+  }
 }
 
 export default function AddPropertyPage() {
+  const { addProperty } = useAuth()
+  const { toast } = useToast()
+  const router = useRouter()
+  const [formData, setFormData] = useState<PropertyFormData>(initialFormData)
+  const [currentTab, setCurrentTab] = useState("details")
+  const [availableWards, setAvailableWards] = useState<string[]>([])
+  const [isSaving, setIsSaving] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Update wards when county changes
+  useEffect(() => {
+    if (formData.county) {
+      const county = KENYA_COUNTIES.find(c => c.name === formData.county)
+      if (county) {
+        const wards = getWardsByCounty(county.code)
+        setAvailableWards(wards)
+        // Reset ward selection when county changes
+        setFormData(prev => ({ ...prev, ward: "" }))
+      }
+    } else {
+      setAvailableWards([])
+    }
+  }, [formData.county])
+
+  // Update location string when county/ward changes
+  useEffect(() => {
+    if (formData.county && formData.ward) {
+      setFormData(prev => ({
+        ...prev,
+        location: `${formData.ward}, ${formData.county}, Kenya`
+      }))
+    } else if (formData.county) {
+      setFormData(prev => ({
+        ...prev,
+        location: `${formData.county}, Kenya`
+      }))
+    }
+  }, [formData.county, formData.ward])
+
+  const handleInputChange = (field: keyof PropertyFormData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleSaveAndContinue = async () => {
+    setIsSaving(true)
+    try {
+      // Save form data to localStorage for persistence
+      localStorage.setItem('propertyFormData', JSON.stringify(formData))
+      
+      // Move to next tab
+      if (currentTab === "details") {
+        setCurrentTab("location")
+      } else if (currentTab === "location") {
+        setCurrentTab("documents")
+      }
+      
+      toast({
+        title: "Progress Saved",
+        description: "Your progress has been saved. You can continue from where you left off.",
+      })
+    } catch (error) {
+      toast({
+        title: "Save Failed",
+        description: "Failed to save progress. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleSaveAsDraft = async () => {
+    setIsSaving(true)
+    try {
+      const propertyData = {
+        title: formData.title || "Draft Property",
+        type: formData.type || 'residential' as const,
+        location: formData.location || "Location pending",
+        size: formData.size || "Size pending",
+        status: 'pending' as const,
+        value: parseFloat(formData.value) || 0,
+        currency: formData.currency,
+        documents: [],
+        coordinates: formData.coordinates.lat && formData.coordinates.lng ? 
+          { lat: formData.coordinates.lat, lng: formData.coordinates.lng } : 
+          undefined
+      }
+
+      const result = await addProperty(propertyData)
+      
+      if (result.success) {
+        toast({
+          title: "Draft Saved",
+          description: "Property saved as draft successfully.",
+        })
+        localStorage.removeItem('propertyFormData')
+        router.push('/properties')
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      toast({
+        title: "Save Failed",
+        description: "Failed to save draft. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleSubmitProperty = async () => {
+    setIsSubmitting(true)
+    try {
+      // Validate required fields
+      if (!formData.title || !formData.type || !formData.size || !formData.county) {
+        toast({
+          title: "Validation Error",
+          description: "Please fill in all required fields.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      const propertyData = {
+        title: formData.title,
+        type: formData.type as 'residential' | 'commercial' | 'agricultural' | 'industrial',
+        location: `${formData.ward ? formData.ward + ', ' : ''}${formData.county}, Kenya`,
+        size: formData.size,
+        status: 'pending' as const,
+        value: parseFloat(formData.value) || 0,
+        currency: formData.currency,
+        documents: [],
+        coordinates: formData.coordinates.lat && formData.coordinates.lng ? 
+          { lat: formData.coordinates.lat, lng: formData.coordinates.lng } : 
+          undefined
+      }
+
+      const result = await addProperty(propertyData)
+      
+      if (result.success) {
+        toast({
+          title: "Property Submitted",
+          description: "Property submitted for verification successfully.",
+        })
+        localStorage.removeItem('propertyFormData')
+        router.push('/properties')
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      toast({
+        title: "Submission Failed",
+        description: "Failed to submit property. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Load saved form data on component mount
+  useEffect(() => {
+    const savedData = localStorage.getItem('propertyFormData')
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData)
+        setFormData(parsedData)
+        toast({
+          title: "Progress Restored",
+          description: "Your previous progress has been restored.",
+        })
+      } catch (error) {
+        console.error('Failed to restore form data:', error)
+      }
+    }
+  }, [])
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -34,11 +249,20 @@ export default function AddPropertyPage() {
           </Button>
         </div>
 
-        <Tabs defaultValue="details" className="w-full">
+        <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="details">Property Details</TabsTrigger>
-            <TabsTrigger value="location">Location</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="details" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Property Details
+            </TabsTrigger>
+            <TabsTrigger value="location" className="flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Location
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Documents
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="details" className="mt-6 space-y-6">
@@ -50,13 +274,18 @@ export default function AddPropertyPage() {
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="title">Property Title</Label>
-                    <Input id="title" placeholder="Enter property title" />
+                    <Label htmlFor="title">Property Title *</Label>
+                    <Input
+                      id="title"
+                      value={formData.title}
+                      onChange={(e) => handleInputChange('title', e.target.value)}
+                      placeholder="e.g., Golden Creek Residential Plot"
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="property-type">Property Type</Label>
-                    <Select>
-                      <SelectTrigger id="property-type">
+                    <Label htmlFor="type">Property Type *</Label>
+                    <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
+                      <SelectTrigger>
                         <SelectValue placeholder="Select property type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -64,145 +293,154 @@ export default function AddPropertyPage() {
                         <SelectItem value="commercial">Commercial</SelectItem>
                         <SelectItem value="agricultural">Agricultural</SelectItem>
                         <SelectItem value="industrial">Industrial</SelectItem>
-                        <SelectItem value="mixed-use">Mixed Use</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="size">Size (Acres)</Label>
-                    <Input id="size" type="number" step="0.01" placeholder="Enter property size" />
+                    <Label htmlFor="size">Size (Acres) *</Label>
+                    <Input
+                      id="size"
+                      value={formData.size}
+                      onChange={(e) => handleInputChange('size', e.target.value)}
+                      placeholder="e.g., 2.5"
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="registration-number">Registration Number</Label>
-                    <Input id="registration-number" placeholder="Enter registration number" />
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Enter property description"
-                      rows={4}
-                      className="resize-none"
+                    <Label htmlFor="registrationNumber">Registration Number</Label>
+                    <Input
+                      id="registrationNumber"
+                      value={formData.registrationNumber}
+                      onChange={(e) => handleInputChange('registrationNumber', e.target.value)}
+                      placeholder="e.g., LR123456"
                     />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Ownership Information</CardTitle>
-                <CardDescription>Enter the ownership details of your property</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="owner-name">Owner Name</Label>
-                    <Input id="owner-name" placeholder="Enter owner name" />
+                    <Label htmlFor="value">Property Value (KES)</Label>
+                    <Input
+                      id="value"
+                      type="number"
+                      value={formData.value}
+                      onChange={(e) => handleInputChange('value', e.target.value)}
+                      placeholder="e.g., 2500000"
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="owner-id">Owner ID Number</Label>
-                    <Input id="owner-id" placeholder="Enter owner ID number" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="acquisition-date">Acquisition Date</Label>
-                    <Input id="acquisition-date" type="date" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="acquisition-type">Acquisition Type</Label>
-                    <Select>
-                      <SelectTrigger id="acquisition-type">
-                        <SelectValue placeholder="Select acquisition type" />
+                    <Label htmlFor="currency">Currency</Label>
+                    <Select value={formData.currency} onValueChange={(value) => handleInputChange('currency', value)}>
+                      <SelectTrigger>
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="purchase">Purchase</SelectItem>
-                        <SelectItem value="inheritance">Inheritance</SelectItem>
-                        <SelectItem value="gift">Gift</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        <SelectItem value="KES">KES (Kenyan Shilling)</SelectItem>
+                        <SelectItem value="USD">USD (US Dollar)</SelectItem>
+                        <SelectItem value="EUR">EUR (Euro)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    placeholder="Enter property description"
+                    rows={4}
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveAndContinue} disabled={isSaving}>
+                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save and Continue
+                  </Button>
+                </div>
               </CardContent>
             </Card>
-
-            <div className="flex justify-end">
-              <Button>
-                Save and Continue
-                <Save className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
           </TabsContent>
 
           <TabsContent value="location" className="mt-6 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Location Information</CardTitle>
+                <CardTitle>Location Details</CardTitle>
                 <CardDescription>Enter the location details of your property</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="county">County</Label>
-                    <Select>
-                      <SelectTrigger id="county">
+                    <Label htmlFor="county">County *</Label>
+                    <Select value={formData.county} onValueChange={(value) => handleInputChange('county', value)}>
+                      <SelectTrigger>
                         <SelectValue placeholder="Select county" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="nairobi">Nairobi</SelectItem>
-                        <SelectItem value="mombasa">Mombasa</SelectItem>
-                        <SelectItem value="kisumu">Kisumu</SelectItem>
-                        <SelectItem value="nakuru">Nakuru</SelectItem>
-                        <SelectItem value="eldoret">Eldoret</SelectItem>
+                        {KENYA_COUNTIES.map((county, index) => (
+                          <SelectItem key={`${county.code}-${index}`} value={county.name}>
+                            {county.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="sub-county">Sub-County</Label>
-                    <Input id="sub-county" placeholder="Enter sub-county" />
-                  </div>
-                  <div className="space-y-2">
                     <Label htmlFor="ward">Ward</Label>
-                    <Input id="ward" placeholder="Enter ward" />
+                    <Select value={formData.ward} onValueChange={(value) => handleInputChange('ward', value)} disabled={!formData.county}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={formData.county ? "Select ward" : "Select county first"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableWards.map((ward, index) => (
+                          <SelectItem key={`${ward}-${index}`} value={ward}>
+                            {ward}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="postal-code">Postal Code</Label>
-                    <Input id="postal-code" placeholder="Enter postal code" />
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="address">Physical Address</Label>
-                    <Input id="address" placeholder="Enter physical address" />
-                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="physicalAddress">Physical Address</Label>
+                  <Input
+                    id="physicalAddress"
+                    value={formData.physicalAddress}
+                    onChange={(e) => handleInputChange('physicalAddress', e.target.value)}
+                    placeholder="e.g., Haile Selassie Avenue, Nairobi"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="location">Generated Location String</Label>
+                  <Input
+                    id="location"
+                    value={formData.location}
+                    readOnly
+                    placeholder="Location will be generated from county and ward selection"
+                    className="bg-muted"
+                  />
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Map Location</CardTitle>
-                <CardDescription>Mark your property location on the map</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[400px]">
-                  <MapComponent />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="latitude">Latitude</Label>
-                    <Input id="latitude" placeholder="Enter latitude" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="longitude">Longitude</Label>
-                    <Input id="longitude" placeholder="Enter longitude" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <PropertyLocationMap 
+              coordinates={formData.coordinates}
+              onCoordinatesChange={(lat, lng) => 
+                handleInputChange('coordinates', { lat, lng })
+              }
+              county={formData.county}
+            />
 
             <div className="flex justify-end">
-              <Button>
+              <Button onClick={handleSaveAndContinue} disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save and Continue
-                <Save className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </TabsContent>
@@ -210,7 +448,7 @@ export default function AddPropertyPage() {
           <TabsContent value="documents" className="mt-6 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Required Documents</CardTitle>
+                <CardTitle>Document Upload</CardTitle>
                 <CardDescription>Upload the required documents for property verification</CardDescription>
               </CardHeader>
               <CardContent>
@@ -243,8 +481,16 @@ export default function AddPropertyPage() {
             </Card>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline">Save as Draft</Button>
-              <Button>Submit Property</Button>
+              <Button variant="outline" onClick={handleSaveAsDraft} disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Save className="mr-2 h-4 w-4" />
+                Save as Draft
+              </Button>
+              <Button onClick={handleSubmitProperty} disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Submit Property
+              </Button>
             </div>
           </TabsContent>
         </Tabs>

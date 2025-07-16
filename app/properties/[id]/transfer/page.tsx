@@ -1,6 +1,9 @@
+"use client"
+
 import type { Metadata } from "next"
 import Link from "next/link"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { useAuth } from "@/components/auth-provider"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -12,12 +15,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DocumentUpload } from "@/components/document-upload"
 import { AlertCircle, CheckCircle, ArrowLeft, ArrowRight } from "lucide-react"
 
-export const metadata: Metadata = {
-  title: "Transfer Ownership | ArdhiX Land Registry System",
-  description: "Transfer Ownership for the ArdhiX Land Registry System",
-}
-
 export default function TransferOwnershipPage({ params }: { params: { id: string } }) {
+  const { user } = useAuth()
+  
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -62,11 +62,11 @@ export default function TransferOwnershipPage({ params }: { params: { id: string
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label>Current Owner</Label>
-                    <Input value="John Doe" readOnly />
+                    <Input value={user?.name || "Loading..."} readOnly />
                   </div>
                   <div className="space-y-2">
                     <Label>Owner ID</Label>
-                    <Input value="KE123456789" readOnly />
+                    <Input value={user?.nationalId || "Loading..."} readOnly />
                   </div>
                 </div>
 
@@ -217,11 +217,11 @@ export default function TransferOwnershipPage({ params }: { params: { id: string
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-muted-foreground">Name</p>
-                        <p className="font-medium">John Doe</p>
+                        <p className="font-medium">{user?.name || "Current Owner"}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">ID Number</p>
-                        <p className="font-medium">KE123456789</p>
+                        <p className="font-medium">{user?.nationalId || "N/A"}</p>
                       </div>
                     </div>
                   </div>
@@ -231,19 +231,19 @@ export default function TransferOwnershipPage({ params }: { params: { id: string
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-muted-foreground">Name</p>
-                        <p className="font-medium">Jane Smith</p>
+                        <p className="font-medium">New Owner Name</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">ID Number</p>
-                        <p className="font-medium">KE987654321</p>
+                        <p className="font-medium">Will be filled from form</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Phone</p>
-                        <p className="font-medium">+254 712 345 678</p>
+                        <p className="font-medium">Will be filled from form</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Email</p>
-                        <p className="font-medium">jane.smith@example.com</p>
+                        <p className="font-medium">Will be filled from form</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Transfer Reason</p>

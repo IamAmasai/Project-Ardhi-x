@@ -1,18 +1,18 @@
+"use client"
+
 import type { Metadata } from "next"
 import Link from "next/link"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { useAuth } from "@/components/auth-provider"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Share2, Download, CheckCircle, MapPin, User } from "lucide-react"
 
-export const metadata: Metadata = {
-  title: "Property Details | ArdhiX Land Registry System",
-  description: "Property Details for the ArdhiX Land Registry System",
-}
-
 export default function PropertyDetailsPage({ params }: { params: { id: string } }) {
+  const { user } = useAuth()
+  
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -158,14 +158,17 @@ export default function PropertyDetailsPage({ params }: { params: { id: string }
                 <h3 className="font-semibold mb-4">Owner Information</h3>
                 <div className="flex items-center gap-4 mb-6">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src="/placeholder-user.jpg" alt="John Doe" />
+                    <AvatarImage src={user?.avatar} alt={user?.name || "User"} />
                     <AvatarFallback>
-                      <User className="h-6 w-6" />
+                      {user?.name
+                        ?.split(" ")
+                        .map((n) => n[0])
+                        .join("") || "U"}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-medium">John Doe</div>
-                    <div className="text-sm text-muted-foreground">Owner since Jan 2023</div>
+                    <div className="font-medium">{user?.name || "Property Owner"}</div>
+                    <div className="text-sm text-muted-foreground">Owner since joining ArdhiX</div>
                   </div>
                 </div>
                 <div>
