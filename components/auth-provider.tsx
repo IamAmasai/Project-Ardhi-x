@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkSession()
   }, [])
 
-  // Protect routes (temporarily disabled for debugging)
+  // Protect routes
   useEffect(() => {
     if (!loading && !redirectingRef.current) {
       const publicPaths = ["/", "/auth/sign-up", "/auth/forgot-password", "/auth/reset-password"]
@@ -50,13 +50,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log("Route protection check:", { user: !!user, pathname, isPublicPath, loading })
 
       if (!user && !isPublicPath) {
-        console.log("Would redirect to login - no user on protected route")
-        // redirectingRef.current = true
-        // router.replace("/")
-        // setTimeout(() => { redirectingRef.current = false }, 1000)
-      } else if (user && pathname === "/" && !redirectingRef.current) {
-        console.log("User logged in but route protection disabled for debugging")
-        // Don't auto-redirect, let login function handle it
+        console.log("Redirecting to login - no user on protected route")
+        redirectingRef.current = true
+        router.replace("/")
+        setTimeout(() => { redirectingRef.current = false }, 1000)
+      } else if (user && pathname === "/") {
+        console.log("Redirecting to dashboard - authenticated user on login page")
+        redirectingRef.current = true
+        router.replace("/dashboard")
+        setTimeout(() => { redirectingRef.current = false }, 1000)
       }
     }
   }, [user, loading, pathname, router])
