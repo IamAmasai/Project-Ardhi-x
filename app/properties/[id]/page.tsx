@@ -1,6 +1,7 @@
 "use client"
 
 import type { Metadata } from "next"
+import { use } from "react"
 import Link from "next/link"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { useAuth } from "@/components/auth-provider"
@@ -10,8 +11,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Share2, Download, CheckCircle, MapPin, User } from "lucide-react"
 
-export default function PropertyDetailsPage({ params }: { params: { id: string } }) {
+export default function PropertyDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { user } = useAuth()
+  const resolvedParams = use(params)
   
   return (
     <DashboardLayout>
@@ -19,7 +21,7 @@ export default function PropertyDetailsPage({ params }: { params: { id: string }
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Property Details</h1>
-            <p className="text-muted-foreground">Geo-hash: {params.id}</p>
+            <p className="text-muted-foreground">Geo-hash: {resolvedParams.id}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" className="flex items-center gap-2">
@@ -183,7 +185,7 @@ export default function PropertyDetailsPage({ params }: { params: { id: string }
                 <h3 className="font-semibold mb-4">Actions</h3>
                 <div className="space-y-3">
                   <Button className="w-full justify-start" asChild>
-                    <Link href={`/properties/${params.id}/transfer`}>Transfer Ownership</Link>
+                    <Link href={`/properties/${resolvedParams.id}/transfer`}>Transfer Ownership</Link>
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
                     Initiate Verification

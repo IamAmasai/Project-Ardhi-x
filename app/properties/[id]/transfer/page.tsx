@@ -1,6 +1,7 @@
 "use client"
 
 import type { Metadata } from "next"
+import { use } from "react"
 import Link from "next/link"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { useAuth } from "@/components/auth-provider"
@@ -15,15 +16,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DocumentUpload } from "@/components/document-upload"
 import { AlertCircle, CheckCircle, ArrowLeft, ArrowRight } from "lucide-react"
 
-export default function TransferOwnershipPage({ params }: { params: { id: string } }) {
+export default function TransferOwnershipPage({ params }: { params: Promise<{ id: string }> }) {
   const { user } = useAuth()
+  const resolvedParams = use(params)
   
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Transfer Ownership</h1>
-          <p className="text-muted-foreground">Property ID: {params.id}</p>
+          <p className="text-muted-foreground">Property ID: {resolvedParams.id}</p>
         </div>
 
         <Tabs defaultValue="details" className="w-full">
@@ -119,7 +121,7 @@ export default function TransferOwnershipPage({ params }: { params: { id: string
 
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" asChild>
-                    <Link href={`/properties/${params.id}`}>
+                    <Link href={`/properties/${resolvedParams.id}`}>
                       <ArrowLeft className="mr-2 h-4 w-4" />
                       Back
                     </Link>
@@ -144,7 +146,7 @@ export default function TransferOwnershipPage({ params }: { params: { id: string
                 </div>
 
                 <div className="space-y-6">
-                  <DocumentUpload propertyId={params.id} />
+                  <DocumentUpload propertyId={resolvedParams.id} />
 
                   <div className="border rounded-md p-4">
                     <h3 className="font-medium mb-2">Required Documents</h3>
@@ -195,7 +197,7 @@ export default function TransferOwnershipPage({ params }: { params: { id: string
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-muted-foreground">Property ID</p>
-                        <p className="font-medium">{params.id}</p>
+                        <p className="font-medium">{resolvedParams.id}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Location</p>
@@ -309,7 +311,7 @@ export default function TransferOwnershipPage({ params }: { params: { id: string
                     <Link href="/dashboard">Go to Dashboard</Link>
                   </Button>
                   <Button asChild>
-                    <Link href={`/properties/${params.id}`}>View Property</Link>
+                    <Link href={`/properties/${resolvedParams.id}`}>View Property</Link>
                   </Button>
                 </div>
               </CardContent>
