@@ -1,13 +1,9 @@
-import type { Metadata } from "next"
+"use client"
+
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { DocumentUpload } from "@/components/document-upload"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertTriangle } from "lucide-react"
-
-export const metadata: Metadata = {
-  title: "Upload Document | ArdhiX Land Registry System",
-  description: "Upload documents to the ArdhiX Land Registry System",
-}
 
 export default function UploadDocumentPage() {
   return (

@@ -1,14 +1,10 @@
-import type { Metadata } from "next"
+"use client"
+
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MapComponent } from "@/components/map-component"
 import { MapPin, X } from "lucide-react"
-
-export const metadata: Metadata = {
-  title: "Map View | ArdhiX Land Registry System",
-  description: "Map View for the ArdhiX Land Registry System",
-}
 
 export default function MapPage() {
   // Sample markers data

@@ -1,12 +1,8 @@
-import type { Metadata } from "next"
+"use client"
+
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckCircle, FileText, Upload, UserPlus, Search } from "lucide-react"
-
-export const metadata: Metadata = {
-  title: "History | ArdhiX Land Registry System",
-  description: "Activity History for the ArdhiX Land Registry System",
-}
 
 export default function HistoryPage() {
   return (

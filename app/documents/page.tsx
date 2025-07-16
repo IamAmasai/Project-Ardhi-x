@@ -1,15 +1,11 @@
-import type { Metadata } from "next"
+"use client"
+
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Search, FileText, Upload, Clock, CheckCircle, AlertCircle, Download } from "lucide-react"
-
-export const metadata: Metadata = {
-  title: "Documents | ArdhiX Land Registry System",
-  description: "Documents for the ArdhiX Land Registry System",
-}
 
 export default function DocumentsPage() {
   return (

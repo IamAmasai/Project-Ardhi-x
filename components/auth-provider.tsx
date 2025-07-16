@@ -54,12 +54,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         redirectingRef.current = true
         router.replace("/")
         setTimeout(() => { redirectingRef.current = false }, 1000)
-      } else if (user && pathname === "/") {
-        console.log("Redirecting to dashboard - authenticated user on login page")
-        redirectingRef.current = true
-        router.replace("/dashboard")
-        setTimeout(() => { redirectingRef.current = false }, 1000)
       }
+      // Remove automatic redirect to dashboard when logged in on public routes
+      // This allows users to navigate freely once authenticated
     }
   }, [user, loading, pathname, router])
 
