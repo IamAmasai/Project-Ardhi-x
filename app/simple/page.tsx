@@ -1,3 +1,5 @@
+"use client"
+
 export default function SimplePage() {
   return (
     <div style={{ backgroundColor: 'white', minHeight: '100vh', padding: '20px' }}>
