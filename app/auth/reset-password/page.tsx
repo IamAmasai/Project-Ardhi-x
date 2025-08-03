@@ -34,15 +34,16 @@ export default function ResetPasswordPage() {
             <div className="space-y-2 relative">
               <Label htmlFor="password">New Password</Label>
               <div className="relative">
-                <Input id="password" type="password" placeholder="Create a strong password" className="h-10 pr-10" />
+                <Input id="password" type="password" placeholder="create a strong password" className="h-10 pr-10" />
                 <button
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   aria-label="Toggle password visibility"
+                  type="button"
                 >
                   <Eye className="h-5 w-5" />
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-foreground/60 mt-1">
                 Password must be at least 8 characters with uppercase, lowercase, number and special character
               </p>
             </div>
@@ -53,12 +54,13 @@ export default function ResetPasswordPage() {
                 <Input
                   id="confirm-password"
                   type="password"
-                  placeholder="Confirm your password"
+                  placeholder="confirm your password"
                   className="h-10 pr-10"
                 />
                 <button
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label="Toggle password visibility"
+                  aria-label="Toggle confirm password visibility"
+                  type="button"
                 >
                   <EyeOff className="h-5 w-5" />
                 </button>
