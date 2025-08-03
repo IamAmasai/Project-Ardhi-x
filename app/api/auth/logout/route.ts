@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { SupabaseAuthService } from '@/lib/supabase-auth'
 
 export async function POST(request: NextRequest) {
   try {
+    // Sign out from Supabase
+    await SupabaseAuthService.signOut()
+
     const response = NextResponse.json({
       success: true,
       message: 'Logged out successfully',

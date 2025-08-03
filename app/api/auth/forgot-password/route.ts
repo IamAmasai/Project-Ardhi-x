@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { AuthService } from '@/lib/auth'
+import { SupabaseAuthService } from '@/lib/supabase-auth'
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,29 +12,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find user
-    const user = await AuthService.findUserByEmail(email)
-    if (!user) {
-      // Don't reveal if user exists or not for security
-      return NextResponse.json({
-        success: true,
-        message: 'If an account with that email exists, a reset link has been sent.',
-      })
-    }
-
-    // Generate reset token
-    const resetToken = AuthService.generateResetToken()
-    const resetTokenExpiry = Date.now() + 3600000 // 1 hour
-
-    // Update user with reset token
-    await AuthService.updateUser(user.id, {
-      resetToken,
-      resetTokenExpiry,
-    })
-
-    // In production, send email with reset link
-    console.log(`Reset token for ${email}: ${resetToken}`)
-    console.log(`Reset URL: ${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${resetToken}`)
+    // Send reset password email via Supabase
+    await SupabaseAuthService.resetPassword(email)
 
     return NextResponse.json({
       success: true,
@@ -42,9 +21,9 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Forgot password error:', error)
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({
+      success: true,
+      message: 'If an account with that email exists, a reset link has been sent.',
+    })
   }
 }

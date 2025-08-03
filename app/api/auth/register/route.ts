@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { AuthService } from '@/lib/auth'
+import { SupabaseAuthService } from '@/lib/supabase-auth'
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,51 +27,62 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const existingUser = await AuthService.findUserByEmail(email)
-    if (existingUser) {
+    // Sign up with Supabase
+    const { user, session } = await SupabaseAuthService.signUp({
+      name,
+      email: email.toLowerCase(),
+      password,
+      phone,
+      nationalId,
+    })
+
+    if (!user || !session) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to create user account' },
+        { status: 500 }
+      )
+    }
+
+    // Get the created profile
+    const profile = await SupabaseAuthService.getUserProfile(user.id)
+    if (!profile) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to create user profile' },
+        { status: 500 }
+      )
+    }
+
+    // Convert profile to user format for compatibility
+    const userData = SupabaseAuthService.profileToUser(profile)
+
+    const response = NextResponse.json({
+      success: true,
+      user: userData,
+      token: session.access_token,
+    })
+
+    response.cookies.set('auth-token', session.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: session.expires_in || 7 * 24 * 60 * 60, // Use session expiry or 7 days
+      path: '/',
+    })
+
+    return response
+  } catch (error: any) {
+    console.error('Registration error:', error)
+    
+    // Handle specific Supabase errors
+    if (error.message?.includes('already registered')) {
       return NextResponse.json(
         { success: false, error: 'User with this email already exists' },
         { status: 409 }
       )
     }
 
-    const hashedPassword = await AuthService.hashPassword(password)
-
-    const newUser = await AuthService.createUser({
-      name,
-      email: email.toLowerCase(),
-      password: hashedPassword,
-      role: 'user',
-      phone,
-      nationalId,
-      avatar: '/placeholder-user.jpg',
-      bio: '',
-      location: '',
-    })
-
-    const token = AuthService.generateToken(newUser.id)
-
-    const sanitizedUser = AuthService.sanitizeUser(newUser)
-
-    const response = NextResponse.json({
-      success: true,
-      user: sanitizedUser,
-      token,
-    })
-
-    response.cookies.set('auth-token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
-      path: '/',
-    })
-
-    return response
-  } catch (error) {
-    console.error('Registration error:', error)
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Failed to create account. Please try again.' },
       { status: 500 }
     )
   }
