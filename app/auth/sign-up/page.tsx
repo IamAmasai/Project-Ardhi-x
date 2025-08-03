@@ -90,12 +90,13 @@ export default function SignUpPage() {
               <Label htmlFor="name">Full Name</Label>
               <Input
                 id="name"
-                placeholder="John Doe"
+                placeholder="your full name"
                 className="h-10"
+                aria-describedby={errors.name ? "name-error" : undefined}
                 {...register("name")}
               />
               {errors.name && (
-                <p className="text-sm text-destructive">{errors.name.message}</p>
+                <p id="name-error" className="text-sm text-destructive" role="alert">{errors.name.message}</p>
               )}
             </div>
 
@@ -104,12 +105,13 @@ export default function SignUpPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="john.doe@example.com"
+                placeholder="your email address"
                 className="h-10"
+                aria-describedby={errors.email ? "email-error" : undefined}
                 {...register("email")}
               />
               {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
+                <p id="email-error" className="text-sm text-destructive" role="alert">{errors.email.message}</p>
               )}
             </div>
 
@@ -118,12 +120,13 @@ export default function SignUpPage() {
               <Input
                 id="phone"
                 type="tel"
-                placeholder="+254 712 345 678"
+                placeholder="phone number (optional)"
                 className="h-10"
+                aria-describedby={errors.phone ? "phone-error" : undefined}
                 {...register("phone")}
               />
               {errors.phone && (
-                <p className="text-sm text-destructive">{errors.phone.message}</p>
+                <p id="phone-error" className="text-sm text-destructive" role="alert">{errors.phone.message}</p>
               )}
             </div>
 
@@ -131,12 +134,13 @@ export default function SignUpPage() {
               <Label htmlFor="nationalId">National ID (Optional)</Label>
               <Input
                 id="nationalId"
-                placeholder="KE123456789"
+                placeholder="national ID (optional)"
                 className="h-10"
+                aria-describedby={errors.nationalId ? "nationalId-error" : undefined}
                 {...register("nationalId")}
               />
               {errors.nationalId && (
-                <p className="text-sm text-destructive">{errors.nationalId.message}</p>
+                <p id="nationalId-error" className="text-sm text-destructive" role="alert">{errors.nationalId.message}</p>
               )}
             </div>
 
@@ -146,8 +150,9 @@ export default function SignUpPage() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Create a password"
+                  placeholder="create a password"
                   className="h-10 pr-10"
+                  aria-describedby={errors.password ? "password-error" : undefined}
                   {...register("password")}
                 />
                 <Button
@@ -156,6 +161,7 @@ export default function SignUpPage() {
                   size="icon"
                   className="absolute right-0 top-0 h-10 w-10"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -165,7 +171,7 @@ export default function SignUpPage() {
                 </Button>
               </div>
               {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
+                <p id="password-error" className="text-sm text-destructive" role="alert">{errors.password.message}</p>
               )}
             </div>
 
@@ -175,8 +181,9 @@ export default function SignUpPage() {
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm your password"
+                  placeholder="confirm your password"
                   className="h-10 pr-10"
+                  aria-describedby={errors.confirmPassword ? "confirmPassword-error" : undefined}
                   {...register("confirmPassword")}
                 />
                 <Button
@@ -185,6 +192,7 @@ export default function SignUpPage() {
                   size="icon"
                   className="absolute right-0 top-0 h-10 w-10"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
                 >
                   {showConfirmPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -194,7 +202,7 @@ export default function SignUpPage() {
                 </Button>
               </div>
               {errors.confirmPassword && (
-                <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+                <p id="confirmPassword-error" className="text-sm text-destructive" role="alert">{errors.confirmPassword.message}</p>
               )}
             </div>
 
@@ -229,7 +237,7 @@ export default function SignUpPage() {
           </form>
 
           <div className="mt-6 text-center text-sm">
-            <span className="text-muted-foreground">Already have an account? </span>
+            <span className="text-foreground/70">Already have an account? </span>
             <Link
               href="/"
               className="text-primary font-medium hover:underline"

@@ -45,7 +45,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loading && !redirectingRef.current) {
       const publicPaths = ["/", "/auth/sign-up", "/auth/forgot-password", "/auth/reset-password"]
-      const isPublicPath = publicPaths.some((path) => pathname === path || pathname.startsWith(path))
+      const isPublicPath = publicPaths.some((path) => {
+        if (path === "/") {
+          return pathname === "/"
+        }
+        return pathname === path || pathname.startsWith(path)
+      })
 
       console.log("Route protection check:", { user: !!user, pathname, isPublicPath, loading })
 

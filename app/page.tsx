@@ -69,7 +69,7 @@ export default function LoginPage() {
         <CardContent className="p-8">
           <div className="flex flex-col items-center space-y-2 mb-8">
             <h1 className="text-3xl font-bold tracking-tight">ArdhiX</h1>
-            <p className="text-sm text-muted-foreground">Secure Land Registry System</p>
+            <p className="text-sm text-foreground/70">Secure Land Registry System</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -84,12 +84,13 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder="enter your email"
                 className="h-12"
+                aria-describedby={errors.email ? "email-error" : undefined}
                 {...register("email")}
               />
               {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
+                <p id="email-error" className="text-sm text-destructive" role="alert">{errors.email.message}</p>
               )}
             </div>
 
@@ -99,8 +100,9 @@ export default function LoginPage() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder="enter your password"
                   className="h-12 pr-10"
+                  aria-describedby={errors.password ? "password-error" : undefined}
                   {...register("password")}
                 />
                 <Button
@@ -109,6 +111,7 @@ export default function LoginPage() {
                   size="icon"
                   className="absolute right-0 top-0 h-12 w-12"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -118,7 +121,7 @@ export default function LoginPage() {
                 </Button>
               </div>
               {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
+                <p id="password-error" className="text-sm text-destructive" role="alert">{errors.password.message}</p>
               )}
             </div>
 
@@ -159,7 +162,7 @@ export default function LoginPage() {
                 <Separator className="w-full" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
+                <span className="bg-background px-2 text-foreground/60">
                   Or continue with
                 </span>
               </div>
@@ -185,7 +188,7 @@ export default function LoginPage() {
             </div>
 
             <div className="mt-6 text-center text-sm">
-              <span className="text-muted-foreground">Don't have an account? </span>
+              <span className="text-foreground/70">Don't have an account? </span>
               <Link
                 href="/auth/sign-up"
                 className="text-primary font-medium hover:underline"
@@ -195,7 +198,7 @@ export default function LoginPage() {
             </div>
 
             <div className="mt-4 text-center">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-foreground/60">
                 Demo credentials: admin@ardhix.com / admin123
               </p>
             </div>

@@ -28,7 +28,7 @@ function EmailSentSuccess({ onTryDifferentEmail }: { onTryDifferentEmail: () => 
               </div>
             </div>
             <h1 className="text-2xl font-bold tracking-tight">Check Your Email</h1>
-            <p className="text-muted-foreground">
+            <p className="text-foreground/70">
               We've sent password reset instructions to your email address.
               Please check your inbox and follow the instructions.
             </p>
@@ -106,7 +106,7 @@ function ForgotPasswordForm({ onSuccess }: { onSuccess: () => void }) {
           </div>
 
           <div className="mb-6">
-            <p className="text-muted-foreground">
+            <p className="text-foreground/70">
               Enter your email address and we'll send you a link to reset your password.
             </p>
           </div>
@@ -123,12 +123,13 @@ function ForgotPasswordForm({ onSuccess }: { onSuccess: () => void }) {
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email address"
+                placeholder="enter your email address"
                 className="h-12"
+                aria-describedby={errors.email ? "email-error" : undefined}
                 {...register("email")}
               />
               {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
+                <p id="email-error" className="text-sm text-destructive" role="alert">{errors.email.message}</p>
               )}
             </div>
 
@@ -149,7 +150,7 @@ function ForgotPasswordForm({ onSuccess }: { onSuccess: () => void }) {
           </form>
 
           <div className="mt-6 text-center text-sm">
-            <span className="text-muted-foreground">Remember your password? </span>
+            <span className="text-foreground/70">Remember your password? </span>
             <Link
               href="/"
               className="text-primary font-medium hover:underline"
