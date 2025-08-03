@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { AuthService } from '@/lib/auth'
+import { SupabaseAuthService } from '@/lib/supabase-auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const { token, password } = await request.json()
+    const { password } = await request.json()
 
-    if (!token || !password) {
+    if (!password) {
       return NextResponse.json(
-        { success: false, error: 'Token and password are required' },
+        { success: false, error: 'Password is required' },
         { status: 400 }
       )
     }
@@ -19,19 +19,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find user with reset token
-    const users = [] // This would be replaced with actual database query
-    // For now, we'll need to implement a method to find by reset token
-    // This is a simplified version - in production, use proper database queries
+    // Update password via Supabase (user must be authenticated)
+    await SupabaseAuthService.updatePassword(password)
 
-    return NextResponse.json(
-      { success: false, error: 'Reset password functionality needs database implementation' },
-      { status: 501 }
-    )
+    return NextResponse.json({
+      success: true,
+      message: 'Password updated successfully',
+    })
   } catch (error) {
     console.error('Reset password error:', error)
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Failed to update password' },
       { status: 500 }
     )
   }
