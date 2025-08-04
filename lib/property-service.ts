@@ -83,6 +83,10 @@ let documents: PropertyDocument[] = [
 ]
 
 export class PropertyService {
+  static getAllProperties(): Property[] {
+    return properties
+  }
+
   static getUserProperties(userId: string): Property[] {
     return properties.filter(property => property.userId === userId)
   }

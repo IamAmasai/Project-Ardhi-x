@@ -5,9 +5,53 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Search, FileText, Upload, Clock, CheckCircle, AlertCircle, Download } from "lucide-react"
+import { Search, FileText, Upload, Clock, CheckCircle, AlertCircle, Download, Trash2 } from "lucide-react"
+import { useAuth } from "@/components/auth-provider"
+import { DocumentHistoryService } from "@/lib/document-history-service"
+import { useToast } from "@/components/ui/use-toast"
+import Link from "next/link"
 
 export default function DocumentsPage() {
+  const { user } = useAuth()
+  const { toast } = useToast()
+
+  const handleDownload = (docName: string, docId: string) => {
+    if (user) {
+      DocumentHistoryService.addAction({
+        userId: user.id,
+        userName: user.name,
+        documentId: docId,
+        documentName: docName,
+        action: 'download',
+        description: `Downloaded ${docName}`
+      })
+
+      toast({
+        title: "Document downloaded",
+        description: `${docName} has been downloaded and logged to your history`,
+      })
+    }
+  }
+
+  const handleDelete = (docName: string, docId: string) => {
+    if (user) {
+      DocumentHistoryService.addAction({
+        userId: user.id,
+        userName: user.name,
+        documentId: docId,
+        documentName: docName,
+        action: 'delete',
+        description: `Deleted ${docName}`,
+      })
+
+      toast({
+        title: "Document deleted",
+        description: `${docName} has been deleted and logged to your history`,
+        variant: "destructive"
+      })
+    }
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -16,10 +60,12 @@ export default function DocumentsPage() {
             <h1 className="text-3xl font-bold tracking-tight">Documents</h1>
             <p className="text-muted-foreground">Manage your property documents</p>
           </div>
-          <Button className="flex items-center gap-2">
-            <Upload className="h-4 w-4" />
-            Upload Document
-          </Button>
+          <Link href="/documents/upload">
+            <Button className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Upload Document
+            </Button>
+          </Link>
         </div>
 
         <div className="flex items-center space-x-2">
@@ -50,9 +96,23 @@ export default function DocumentsPage() {
                     <CheckCircle className="h-3 w-3" />
                     Verified
                   </Badge>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={() => handleDownload("Title Deed.pdf", "doc_001")}
+                  >
                     <Download className="h-4 w-4" />
                     <span className="sr-only">Download</span>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={() => handleDelete("Title Deed.pdf", "doc_001")}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Delete</span>
                   </Button>
                 </div>
               </div>
@@ -72,9 +132,23 @@ export default function DocumentsPage() {
                     <Clock className="h-3 w-3" />
                     Pending
                   </Badge>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={() => handleDownload("Survey Report.pdf", "doc_002")}
+                  >
                     <Download className="h-4 w-4" />
                     <span className="sr-only">Download</span>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={() => handleDelete("Survey Report.pdf", "doc_002")}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Delete</span>
                   </Button>
                 </div>
               </div>
@@ -94,9 +168,23 @@ export default function DocumentsPage() {
                     <AlertCircle className="h-3 w-3" />
                     Rejected
                   </Badge>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={() => handleDownload("Land Rates Receipt.pdf", "doc_003")}
+                  >
                     <Download className="h-4 w-4" />
                     <span className="sr-only">Download</span>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={() => handleDelete("Land Rates Receipt.pdf", "doc_003")}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Delete</span>
                   </Button>
                 </div>
               </div>
