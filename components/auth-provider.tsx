@@ -64,14 +64,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log("AuthProvider login function called with:", email)
     setLoading(true)
     try {
-      // Simple working mock for development
+      // Simple working mock for development with admin support
+      const isAdmin = email.includes('admin') || email === 'jane.smith@example.com'
       const mockUser: User = {
-        id: "admin_001",
+        id: isAdmin ? "admin_002" : "admin_001",
         email: email,
         name: email.split('@')[0] || "Test User",
         phone: "+254700000000",
         nationalId: "12345678",
-        role: "user",
+        role: isAdmin ? "admin" : "user",
         dateJoined: new Date().toISOString()
       }
 
@@ -109,12 +110,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Simple mock registration for development
       const mockUser: User = {
-        id: "admin_001", // Match the sample property data
+        id: "user_" + Date.now(),
         email: userData.email,
         name: userData.name,
         phone: userData.phone,
         nationalId: userData.nationalId,
-        role: "user",
+        role: "user", // New users start as regular users
         dateJoined: new Date().toISOString()
       }
 

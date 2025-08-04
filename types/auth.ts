@@ -2,7 +2,7 @@ export interface User {
   id: string
   name: string
   email: string
-  role: string
+  role: 'user' | 'admin'
   avatar?: string
   phone?: string
   nationalId?: string
@@ -84,4 +84,27 @@ export interface ApiResponse<T = any> {
   success: boolean
   data?: T
   error?: string
+}
+
+export interface DocumentAction {
+  id: string
+  userId: string
+  userName: string
+  documentId: string
+  documentName: string
+  action: 'upload' | 'delete' | 'download' | 'verify' | 'reject'
+  description: string
+  timestamp: string
+  metadata?: {
+    fileSize?: number
+    fileType?: string
+    propertyId?: string
+    verificationNotes?: string
+  }
+}
+
+export interface SystemActivity extends DocumentAction {
+  userEmail: string
+  ipAddress?: string
+  userAgent?: string
 }
