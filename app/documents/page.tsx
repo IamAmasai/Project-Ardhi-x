@@ -6,8 +6,57 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Search, FileText, Upload, Clock, CheckCircle, AlertCircle, Download } from "lucide-react"
+import { useAuth } from "@/components/auth-provider"
+import { activityService } from "@/lib/activity-service"
+import { useState } from "react"
+import { toast } from "sonner"
 
 export default function DocumentsPage() {
+  const { user } = useAuth()
+  const [isUploading, setIsUploading] = useState(false)
+
+  const handleUpload = async () => {
+    if (!user) return
+    
+    setIsUploading(true)
+    
+    try {
+      // Simulate file upload process
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Log the upload activity
+      activityService.logDocumentAction(
+        user.id,
+        user.name,
+        'document_upload',
+        'New Document.pdf',
+        `doc_${Date.now()}`,
+        'prop_001',
+        'Sample Property'
+      )
+      
+      toast.success('Document uploaded successfully!')
+    } catch (error) {
+      toast.error('Failed to upload document')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleDownload = async (documentName: string) => {
+    if (!user) return
+    
+    // Log the download activity
+    activityService.logDocumentAction(
+      user.id,
+      user.name,
+      'document_download',
+      documentName
+    )
+    
+    toast.success(`Downloaded ${documentName}`)
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -16,9 +65,13 @@ export default function DocumentsPage() {
             <h1 className="text-3xl font-bold tracking-tight">Documents</h1>
             <p className="text-muted-foreground">Manage your property documents</p>
           </div>
-          <Button className="flex items-center gap-2">
+          <Button 
+            className="flex items-center gap-2" 
+            onClick={handleUpload}
+            disabled={isUploading}
+          >
             <Upload className="h-4 w-4" />
-            Upload Document
+            {isUploading ? 'Uploading...' : 'Upload Document'}
           </Button>
         </div>
 
@@ -50,7 +103,12 @@ export default function DocumentsPage() {
                     <CheckCircle className="h-3 w-3" />
                     Verified
                   </Badge>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={() => handleDownload('Title Deed.pdf')}
+                  >
                     <Download className="h-4 w-4" />
                     <span className="sr-only">Download</span>
                   </Button>
@@ -72,7 +130,12 @@ export default function DocumentsPage() {
                     <Clock className="h-3 w-3" />
                     Pending
                   </Badge>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={() => handleDownload('Survey Report.pdf')}
+                  >
                     <Download className="h-4 w-4" />
                     <span className="sr-only">Download</span>
                   </Button>
@@ -94,7 +157,12 @@ export default function DocumentsPage() {
                     <AlertCircle className="h-3 w-3" />
                     Rejected
                   </Badge>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={() => handleDownload('Land Rates Receipt.pdf')}
+                  >
                     <Download className="h-4 w-4" />
                     <span className="sr-only">Download</span>
                   </Button>

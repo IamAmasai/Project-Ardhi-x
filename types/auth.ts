@@ -1,8 +1,10 @@
+export type UserRole = 'user' | 'admin'
+
 export interface User {
   id: string
   name: string
   email: string
-  role: string
+  role: UserRole
   avatar?: string
   phone?: string
   nationalId?: string
@@ -84,4 +86,35 @@ export interface ApiResponse<T = any> {
   success: boolean
   data?: T
   error?: string
+}
+
+export type ActivityType = 
+  | 'document_upload' 
+  | 'document_download' 
+  | 'document_delete' 
+  | 'document_approve' 
+  | 'document_reject'
+  | 'property_create' 
+  | 'property_update' 
+  | 'property_delete'
+  | 'property_verify'
+  | 'user_login'
+  | 'user_logout'
+  | 'user_register'
+  | 'profile_update'
+
+export interface Activity {
+  id: string
+  userId: string
+  userName: string
+  type: ActivityType
+  description: string
+  metadata?: {
+    documentId?: string
+    documentName?: string
+    propertyId?: string
+    propertyTitle?: string
+    [key: string]: any
+  }
+  timestamp: string
 }

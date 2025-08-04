@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Map, MapPin, FileText, History, Settings, ChevronRight } from "lucide-react"
+import { Home, Map, MapPin, FileText, History, Settings, ChevronRight, Shield } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar"
+import { useAuth } from "@/components/auth-provider"
 
 interface SidebarNavProps {
   className?: string
@@ -18,6 +19,7 @@ interface SidebarNavProps {
 
 export function SidebarNav({ className }: SidebarNavProps) {
   const pathname = usePathname()
+  const { user } = useAuth()
 
   const routes = [
     {
@@ -45,6 +47,13 @@ export function SidebarNav({ className }: SidebarNavProps) {
       href: "/history",
       icon: History,
     },
+    ...(user?.role === 'admin' ? [
+      {
+        name: "Admin Panel",
+        href: "/admin",
+        icon: Shield,
+      }
+    ] : []),
     {
       name: "Settings",
       href: "/settings",

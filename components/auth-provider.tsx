@@ -65,13 +65,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true)
     try {
       // Simple working mock for development
+      const isAdmin = email.includes('admin') || email === 'admin@ardhix.com'
+      
       const mockUser: User = {
-        id: "admin_001",
+        id: isAdmin ? "admin_001" : "user_002",
         email: email,
         name: email.split('@')[0] || "Test User",
         phone: "+254700000000",
         nationalId: "12345678",
-        role: "user",
+        role: isAdmin ? "admin" : "user",
         dateJoined: new Date().toISOString()
       }
 
@@ -86,6 +88,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(mockUser)
       setLoading(false)
       console.log("User state updated, scheduling redirect...")
+      
+      // Log the login activity
+      const { activityService } = await import('@/lib/activity-service')
+      activityService.logUserAction(mockUser.id, mockUser.name, 'user_login')
       
       // Direct redirect after successful login
       setTimeout(() => {
@@ -135,6 +141,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
+      // Log the logout activity before clearing user data
+      if (user) {
+        const { activityService } = await import('@/lib/activity-service')
+        activityService.logUserAction(user.id, user.name, 'user_logout')
+      }
+      
       // Only access localStorage on client side
       if (typeof window !== 'undefined') {
         localStorage.removeItem('authUser')
