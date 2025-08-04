@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Map, MapPin, FileText, History, Settings, ChevronRight } from "lucide-react"
+import { Home, Map, MapPin, FileText, History, Settings, ChevronRight, Shield, Users, Activity } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -11,6 +11,8 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar"
+import { useAuth } from "@/components/auth-provider"
+import { isAdmin } from "@/lib/access-control"
 
 interface SidebarNavProps {
   className?: string
@@ -18,6 +20,7 @@ interface SidebarNavProps {
 
 export function SidebarNav({ className }: SidebarNavProps) {
   const pathname = usePathname()
+  const { user } = useAuth()
 
   const routes = [
     {
@@ -45,11 +48,28 @@ export function SidebarNav({ className }: SidebarNavProps) {
       href: "/history",
       icon: History,
     },
+  ]
+
+  const adminRoutes = [
+    {
+      name: "Admin Panel",
+      href: "/admin",
+      icon: Shield,
+    },
+  ]
+
+  const settingsRoutes = [
     {
       name: "Settings",
       href: "/settings",
       icon: Settings,
     },
+  ]
+
+  const allRoutes = [
+    ...routes,
+    ...(isAdmin(user) ? adminRoutes : []),
+    ...settingsRoutes
   ]
 
   return (
@@ -61,7 +81,7 @@ export function SidebarNav({ className }: SidebarNavProps) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {routes.map((route) => (
+          {allRoutes.map((route) => (
             <SidebarMenuItem key={route.href}>
               <SidebarMenuButton asChild isActive={pathname === route.href} tooltip={route.name}>
                 <Link href={route.href} className="flex items-center">

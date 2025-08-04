@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Upload, X, File, Check } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { useToast } from "@/components/ui/use-toast"
+import { useAuth } from "@/components/auth-provider"
+import { DocumentHistoryService } from "@/lib/document-history-service"
 
 interface DocumentUploadProps {
   onUploadComplete?: (file: File, metadata: any) => void
@@ -24,6 +26,7 @@ export function DocumentUpload({ onUploadComplete, propertyId }: DocumentUploadP
   const [uploading, setUploading] = useState<boolean>(false)
   const [progress, setProgress] = useState<number>(0)
   const { toast } = useToast()
+  const { user } = useAuth()
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -66,13 +69,30 @@ export function DocumentUpload({ onUploadComplete, propertyId }: DocumentUploadP
       setTimeout(() => {
         setUploading(false)
 
+        // Log the document upload action to history
+        if (user) {
+          DocumentHistoryService.addAction({
+            userId: user.id,
+            userName: user.name,
+            documentId: `doc_${Date.now()}`,
+            documentName: file.name,
+            action: 'upload',
+            description: `Uploaded ${file.name} for ${documentType.replace('-', ' ')}${propertyId ? ` (Property: ${propertyId})` : ''}`,
+            metadata: {
+              fileSize: file.size,
+              fileType: file.type,
+              propertyId: propertyId
+            }
+          })
+        }
+
         if (onUploadComplete) {
           onUploadComplete(file, { documentType, description, propertyId })
         }
 
         toast({
           title: "Document uploaded",
-          description: "Your document has been uploaded successfully",
+          description: "Your document has been uploaded successfully and logged to your history",
         })
 
         // Reset form
