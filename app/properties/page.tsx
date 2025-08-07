@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Search, CheckCircle, Clock, AlertCircle, Grid, List, SlidersHorizontal, Plus } from "lucide-react"
+import { formatDistanceToNow } from "date-fns"
 import {
   Select,
   SelectContent,
@@ -148,7 +149,7 @@ export default function PropertiesPage() {
                           </Badge>
                         )}
                         <span className="text-xs text-muted-foreground ml-auto">
-                          Updated {new Date(property.updatedAt).toLocaleDateString()}
+                          Updated {formatDistanceToNow(new Date(property.updatedAt), { addSuffix: true })}
                         </span>
                       </div>
                       <div className="flex flex-col sm:flex-row gap-2">

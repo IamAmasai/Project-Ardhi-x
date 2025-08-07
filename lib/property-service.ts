@@ -170,4 +170,12 @@ export class PropertyService {
     const propertyIds = userProperties.map(prop => prop.id)
     return documents.filter(doc => propertyIds.includes(doc.propertyId))
   }
+
+  static deleteDocument(documentId: string): boolean {
+    const documentIndex = documents.findIndex(doc => doc.id === documentId)
+    if (documentIndex === -1) return false
+
+    documents.splice(documentIndex, 1)
+    return true
+  }
 }

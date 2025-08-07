@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,45 +9,88 @@ import { Input } from "@/components/ui/input"
 import { Search, FileText, Upload, Clock, CheckCircle, AlertCircle, Download, Trash2 } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 import { DocumentHistoryService } from "@/lib/document-history-service"
+import { PropertyService } from "@/lib/property-service"
 import { useToast } from "@/components/ui/use-toast"
+import { formatDistanceToNow } from "date-fns"
 import Link from "next/link"
+import type { PropertyDocument } from "@/types/auth"
 
 export default function DocumentsPage() {
   const { user } = useAuth()
   const { toast } = useToast()
+  const [documents, setDocuments] = useState<PropertyDocument[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (user) {
+      const userDocuments = PropertyService.getAllUserDocuments(user.id)
+      setDocuments(userDocuments)
+    } else {
+      // For demo purposes when user is not authenticated, show sample documents
+      const sampleDocuments = PropertyService.getAllUserDocuments('admin_001')
+      setDocuments(sampleDocuments)
+    }
+    setLoading(false)
+  }, [user])
 
   const handleDownload = (docName: string, docId: string) => {
-    if (user) {
-      DocumentHistoryService.addAction({
-        userId: user.id,
-        userName: user.name,
-        documentId: docId,
-        documentName: docName,
-        action: 'download',
-        description: `Downloaded ${docName}`
-      })
+    const userId = user?.id || 'admin_001' // Fallback for demo
+    const userName = user?.name || 'Demo User' // Fallback for demo
+    
+    DocumentHistoryService.addAction({
+      userId,
+      userName,
+      documentId: docId,
+      documentName: docName,
+      action: 'download',
+      description: `Downloaded ${docName}`
+    })
 
-      toast({
-        title: "Document downloaded",
-        description: `${docName} has been downloaded and logged to your history`,
-      })
-    }
+    toast({
+      title: "Document downloaded",
+      description: `${docName} has been downloaded and logged to your history`,
+    })
   }
 
-  const handleDelete = (docName: string, docId: string) => {
-    if (user) {
-      DocumentHistoryService.addAction({
-        userId: user.id,
-        userName: user.name,
-        documentId: docId,
-        documentName: docName,
-        action: 'delete',
-        description: `Deleted ${docName}`,
-      })
+  const handleDelete = async (docName: string, docId: string) => {
+    const userId = user?.id || 'admin_001' // Fallback for demo
+    const userName = user?.name || 'Demo User' // Fallback for demo
+    
+    try {
+      // Delete from service
+      const success = PropertyService.deleteDocument(docId)
+      
+      if (success) {
+        // Update local state
+        setDocuments(prev => prev.filter(doc => doc.id !== docId))
+        
+        // Log the action
+        DocumentHistoryService.addAction({
+          userId,
+          userName,
+          documentId: docId,
+          documentName: docName,
+          action: 'delete',
+          description: `Deleted ${docName}`,
+        })
 
+        toast({
+          title: "Document deleted",
+          description: `${docName} has been deleted successfully`,
+          variant: "destructive"
+        })
+      } else {
+        toast({
+          title: "Delete failed",
+          description: "Failed to delete the document. Please try again.",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      console.error('Error deleting document:', error)
       toast({
-        title: "Document deleted",
-        description: `${docName} has been deleted and logged to your history`,
+        title: "Error",
+        description: "An error occurred while deleting the document",
         variant: "destructive"
       })
     }
@@ -80,115 +124,81 @@ export default function DocumentsPage() {
             <CardTitle>Recent Documents</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="divide-y">
-              <div className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium">Title Deed</h3>
-                    <p className="text-xs text-muted-foreground">Uploaded 2 days ago</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="flex items-center gap-1 text-success border-success">
-                    <CheckCircle className="h-3 w-3" />
-                    Verified
-                  </Badge>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8"
-                    onClick={() => handleDownload("Title Deed.pdf", "doc_001")}
-                  >
-                    <Download className="h-4 w-4" />
-                    <span className="sr-only">Download</span>
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8"
-                    onClick={() => handleDelete("Title Deed.pdf", "doc_001")}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Delete</span>
-                  </Button>
-                </div>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
-
-              <div className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
+            ) : documents.length > 0 ? (
+              <div className="divide-y">
+                {documents.map((document) => (
+                  <div key={document.id} className="flex items-center justify-between py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center">
+                        <FileText className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{document.name}</h3>
+                        <p className="text-xs text-muted-foreground">
+                          Uploaded {formatDistanceToNow(new Date(document.uploadedAt), { addSuffix: true })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className={`flex items-center gap-1 ${
+                          document.status === 'approved'
+                            ? 'text-success border-success'
+                            : document.status === 'pending'
+                            ? 'text-warning border-warning'
+                            : 'text-destructive border-destructive'
+                        }`}
+                      >
+                        {document.status === 'approved' ? (
+                          <CheckCircle className="h-3 w-3" />
+                        ) : document.status === 'pending' ? (
+                          <Clock className="h-3 w-3" />
+                        ) : (
+                          <AlertCircle className="h-3 w-3" />
+                        )}
+                        {document.status === 'approved' ? 'Verified' : document.status === 'pending' ? 'Pending' : 'Rejected'}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleDownload(document.name, document.id)}
+                      >
+                        <Download className="h-4 w-4" />
+                        <span className="sr-only">Download</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleDelete(document.name, document.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete</span>
+                      </Button>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-medium">Survey Report</h3>
-                    <p className="text-xs text-muted-foreground">Uploaded yesterday</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="flex items-center gap-1 text-warning border-warning">
-                    <Clock className="h-3 w-3" />
-                    Pending
-                  </Badge>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8"
-                    onClick={() => handleDownload("Survey Report.pdf", "doc_002")}
-                  >
-                    <Download className="h-4 w-4" />
-                    <span className="sr-only">Download</span>
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8"
-                    onClick={() => handleDelete("Survey Report.pdf", "doc_002")}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Delete</span>
-                  </Button>
-                </div>
+                ))}
               </div>
-
-              <div className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium">Land Rates Receipt</h3>
-                    <p className="text-xs text-muted-foreground">Uploaded 5 days ago</p>
-                  </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="mx-auto mb-4">
+                  <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto" />
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="flex items-center gap-1 text-destructive border-destructive">
-                    <AlertCircle className="h-3 w-3" />
-                    Rejected
-                  </Badge>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8"
-                    onClick={() => handleDownload("Land Rates Receipt.pdf", "doc_003")}
-                  >
-                    <Download className="h-4 w-4" />
-                    <span className="sr-only">Download</span>
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8"
-                    onClick={() => handleDelete("Land Rates Receipt.pdf", "doc_003")}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Delete</span>
-                  </Button>
-                </div>
+                <h3 className="text-lg font-semibold mb-2">No Documents Found</h3>
+                <p className="text-muted-foreground mb-4">
+                  You haven't uploaded any documents yet. Start by adding your property documents.
+                </p>
+                <Button asChild>
+                  <Link href="/documents/upload">Upload First Document</Link>
+                </Button>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
