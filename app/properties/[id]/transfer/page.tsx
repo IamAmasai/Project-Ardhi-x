@@ -1,10 +1,12 @@
 "use client"
 
+import { useState } from "react"
 import type { Metadata } from "next"
 import { use } from "react"
 import Link from "next/link"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { useAuth } from "@/components/auth-provider"
+import { PropertyService } from "@/lib/property-service"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -14,11 +16,146 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DocumentUpload } from "@/components/document-upload"
+import { useToast } from "@/components/ui/use-toast"
 import { AlertCircle, CheckCircle, ArrowLeft, ArrowRight } from "lucide-react"
+
+interface TransferFormData {
+  nationalId: string
+  fullName: string
+  phone: string
+  email: string
+  transferReason: string
+  notes: string
+}
+
+interface TransferState {
+  currentStep: number
+  formData: TransferFormData
+  isFormValid: boolean
+  detailsConfirmed: boolean
+  finalConfirmed: boolean
+  transferCompleted: boolean
+  transactionId: string
+}
 
 export default function TransferOwnershipPage({ params }: { params: Promise<{ id: string }> }) {
   const { user } = useAuth()
+  const { toast } = useToast()
   const resolvedParams = use(params)
+  
+  const [state, setState] = useState<TransferState>({
+    currentStep: 1,
+    formData: {
+      nationalId: '',
+      fullName: '',
+      phone: '',
+      email: '',
+      transferReason: '',
+      notes: ''
+    },
+    isFormValid: false,
+    detailsConfirmed: false,
+    finalConfirmed: false,
+    transferCompleted: false,
+    transactionId: ''
+  })
+
+  const updateFormData = (field: keyof TransferFormData, value: string) => {
+    const newFormData = { ...state.formData, [field]: value }
+    const isValid = newFormData.nationalId && newFormData.fullName && 
+                   newFormData.phone && newFormData.email && newFormData.transferReason
+
+    setState(prev => ({
+      ...prev,
+      formData: newFormData,
+      isFormValid: !!isValid
+    }))
+  }
+
+  const goToNextStep = () => {
+    if (state.currentStep < 4) {
+      setState(prev => ({ ...prev, currentStep: prev.currentStep + 1 }))
+    }
+  }
+
+  const goToPreviousStep = () => {
+    if (state.currentStep > 1) {
+      setState(prev => ({ ...prev, currentStep: prev.currentStep - 1 }))
+    }
+  }
+
+  const handleDetailsNext = () => {
+    if (!state.isFormValid || !state.detailsConfirmed) {
+      toast({
+        title: "Form incomplete",
+        description: "Please fill in all required fields and confirm the information.",
+        variant: "destructive"
+      })
+      return
+    }
+    goToNextStep()
+  }
+
+  const handleVerificationNext = () => {
+    // In a real app, you'd check if required documents are uploaded
+    goToNextStep()
+  }
+
+  const handleConfirmTransfer = async () => {
+    if (!state.finalConfirmed) {
+      toast({
+        title: "Confirmation required",
+        description: "Please confirm that you want to transfer ownership.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      // Simulate transfer processing
+      const transactionId = `TRX-${Math.random().toString(36).substring(2, 10).toUpperCase()}`
+      
+      // In a real app, you would:
+      // 1. Call API to create transfer request
+      // 2. Update property ownership in database
+      // 3. Send notifications to involved parties
+      // 4. Create blockchain record if applicable
+      
+      // For now, we'll update the property status to show it's in transfer
+      PropertyService.updateProperty(resolvedParams.id, {
+        status: 'pending'
+      })
+
+      setState(prev => ({
+        ...prev,
+        transferCompleted: true,
+        transactionId,
+        currentStep: 4
+      }))
+
+      toast({
+        title: "Transfer initiated",
+        description: "Your property transfer request has been submitted successfully.",
+      })
+    } catch (error) {
+      console.error('Transfer error:', error)
+      toast({
+        title: "Transfer failed",
+        description: "There was an error processing your transfer request. Please try again.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const getActiveTab = () => {
+    switch (state.currentStep) {
+      case 1: return "details"
+      case 2: return "verification"
+      case 3: return "confirmation"
+      case 4: return "complete"
+      default: return "details"
+    }
+  }
   
   return (
     <DashboardLayout>
@@ -28,22 +165,30 @@ export default function TransferOwnershipPage({ params }: { params: Promise<{ id
           <p className="text-muted-foreground">Property ID: {resolvedParams.id}</p>
         </div>
 
-        <Tabs defaultValue="details" className="w-full">
+        <Tabs value={getActiveTab()} className="w-full">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                state.currentStep >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+              }`}>
                 1
               </div>
-              <div className="h-0.5 w-12 bg-primary"></div>
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <div className={`h-0.5 w-12 ${state.currentStep >= 2 ? 'bg-primary' : 'bg-muted'}`}></div>
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                state.currentStep >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+              }`}>
                 2
               </div>
-              <div className="h-0.5 w-12 bg-muted"></div>
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <div className={`h-0.5 w-12 ${state.currentStep >= 3 ? 'bg-primary' : 'bg-muted'}`}></div>
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                state.currentStep >= 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+              }`}>
                 3
               </div>
-              <div className="h-0.5 w-12 bg-muted"></div>
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <div className={`h-0.5 w-12 ${state.currentStep >= 4 ? 'bg-primary' : 'bg-muted'}`}></div>
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                state.currentStep >= 4 ? 'bg-success text-white' : 'bg-muted text-muted-foreground'
+              }`}>
                 4
               </div>
             </div>
@@ -77,23 +222,43 @@ export default function TransferOwnershipPage({ params }: { params: Promise<{ id
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="national-id">National ID Number</Label>
-                      <Input id="national-id" placeholder="Enter ID number" />
+                      <Input 
+                        id="national-id" 
+                        placeholder="Enter ID number" 
+                        value={state.formData.nationalId}
+                        onChange={(e) => updateFormData('nationalId', e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="full-name">Full Name</Label>
-                      <Input id="full-name" placeholder="Enter full name" />
+                      <Input 
+                        id="full-name" 
+                        placeholder="Enter full name" 
+                        value={state.formData.fullName}
+                        onChange={(e) => updateFormData('fullName', e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number</Label>
-                      <Input id="phone" placeholder="Enter phone number" />
+                      <Input 
+                        id="phone" 
+                        placeholder="Enter phone number" 
+                        value={state.formData.phone}
+                        onChange={(e) => updateFormData('phone', e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="email">Email Address</Label>
-                      <Input id="email" placeholder="Enter email address" />
+                      <Input 
+                        id="email" 
+                        placeholder="Enter email address" 
+                        value={state.formData.email}
+                        onChange={(e) => updateFormData('email', e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="transfer-reason">Transfer Reason</Label>
-                      <Select>
+                      <Select value={state.formData.transferReason} onValueChange={(value) => updateFormData('transferReason', value)}>
                         <SelectTrigger id="transfer-reason">
                           <SelectValue placeholder="Select reason" />
                         </SelectTrigger>
@@ -107,13 +272,23 @@ export default function TransferOwnershipPage({ params }: { params: Promise<{ id
                     </div>
                     <div className="space-y-2 md:col-span-2">
                       <Label htmlFor="notes">Additional Notes</Label>
-                      <Textarea id="notes" placeholder="Enter any additional information" rows={4} />
+                      <Textarea 
+                        id="notes" 
+                        placeholder="Enter any additional information" 
+                        rows={4} 
+                        value={state.formData.notes}
+                        onChange={(e) => updateFormData('notes', e.target.value)}
+                      />
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-2 pt-4">
-                  <Checkbox id="confirm" />
+                  <Checkbox 
+                    id="confirm" 
+                    checked={state.detailsConfirmed}
+                    onCheckedChange={(checked) => setState(prev => ({ ...prev, detailsConfirmed: !!checked }))}
+                  />
                   <Label htmlFor="confirm" className="text-sm">
                     I confirm that all information provided is accurate and complete.
                   </Label>
@@ -126,7 +301,7 @@ export default function TransferOwnershipPage({ params }: { params: Promise<{ id
                       Back
                     </Link>
                   </Button>
-                  <Button>
+                  <Button onClick={handleDetailsNext}>
                     Next
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -168,11 +343,11 @@ export default function TransferOwnershipPage({ params }: { params: Promise<{ id
                 </div>
 
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={goToPreviousStep}>
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Previous
                   </Button>
-                  <Button>
+                  <Button onClick={handleVerificationNext}>
                     Next
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -233,41 +408,51 @@ export default function TransferOwnershipPage({ params }: { params: Promise<{ id
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-muted-foreground">Name</p>
-                        <p className="font-medium">New Owner Name</p>
+                        <p className="font-medium">{state.formData.fullName || 'Not specified'}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">ID Number</p>
-                        <p className="font-medium">Will be filled from form</p>
+                        <p className="font-medium">{state.formData.nationalId || 'Not specified'}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Phone</p>
-                        <p className="font-medium">Will be filled from form</p>
+                        <p className="font-medium">{state.formData.phone || 'Not specified'}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Email</p>
-                        <p className="font-medium">Will be filled from form</p>
+                        <p className="font-medium">{state.formData.email || 'Not specified'}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Transfer Reason</p>
-                        <p className="font-medium">Sale</p>
+                        <p className="font-medium">{state.formData.transferReason || 'Not specified'}</p>
                       </div>
+                      {state.formData.notes && (
+                        <div className="col-span-2">
+                          <p className="text-muted-foreground">Additional Notes</p>
+                          <p className="font-medium">{state.formData.notes}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-2 pt-4">
-                  <Checkbox id="final-confirm" />
+                  <Checkbox 
+                    id="final-confirm" 
+                    checked={state.finalConfirmed}
+                    onCheckedChange={(checked) => setState(prev => ({ ...prev, finalConfirmed: !!checked }))}
+                  />
                   <Label htmlFor="final-confirm" className="text-sm">
                     I confirm that I want to transfer ownership of this property to the new owner.
                   </Label>
                 </div>
 
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={goToPreviousStep}>
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Previous
                   </Button>
-                  <Button>
+                  <Button onClick={handleConfirmTransfer}>
                     Confirm Transfer
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -293,7 +478,7 @@ export default function TransferOwnershipPage({ params }: { params: Promise<{ id
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Transaction ID:</span>
                       <span className="font-medium">
-                        TRX-{Math.random().toString(36).substring(2, 10).toUpperCase()}
+                        {state.transactionId}
                       </span>
                     </div>
                     <div className="flex justify-between">
