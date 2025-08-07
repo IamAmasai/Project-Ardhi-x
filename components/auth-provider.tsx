@@ -5,6 +5,7 @@ import { createContext, useContext, useState, useEffect, useRef } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { User, AuthContextType, RegisterData, Property, UserStats } from "@/types/auth"
 import { PropertyService } from "@/lib/property-service"
+import { UserRegistry } from "@/lib/user-registry"
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -64,27 +65,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log("AuthProvider login function called with:", email)
     setLoading(true)
     try {
-      // Simple working mock for development with admin support
-      const isAdmin = email.includes('admin') || email === 'jane.smith@example.com'
-      const mockUser: User = {
-        id: isAdmin ? "admin_002" : "admin_001",
-        email: email,
-        name: email.split('@')[0] || "Test User",
-        phone: "+254700000000",
-        nationalId: "12345678",
-        role: isAdmin ? "admin" : "user",
-        dateJoined: new Date().toISOString()
+      // Check if user is registered
+      if (!UserRegistry.isUserRegistered(email)) {
+        setLoading(false)
+        return { success: false, error: 'Account not found. Please sign up first.' }
       }
 
-      console.log("Setting user data:", mockUser)
+      // Get registered user
+      const registeredUser = UserRegistry.findUserByEmail(email)
+      if (!registeredUser) {
+        setLoading(false)
+        return { success: false, error: 'Account not found. Please sign up first.' }
+      }
 
+      console.log("Setting user data:", registeredUser)
+
+      // Track if this is user's first login after registration
+      const isFirstLogin = !localStorage.getItem(`user_${registeredUser.id}_hasLoggedIn`)
+      
       // Only access localStorage on client side
       if (typeof window !== 'undefined') {
-        localStorage.setItem('authUser', JSON.stringify(mockUser))
+        localStorage.setItem('authUser', JSON.stringify({...registeredUser, isFirstLogin}))
+        localStorage.setItem(`user_${registeredUser.id}_hasLoggedIn`, 'true')
         console.log("Saved user to localStorage")
       }
       
-      setUser(mockUser)
+      setUser({...registeredUser, isFirstLogin} as User & { isFirstLogin: boolean })
       setLoading(false)
       console.log("User state updated, scheduling redirect...")
       
@@ -108,23 +114,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = async (userData: RegisterData) => {
     setLoading(true)
     try {
-      // Simple mock registration for development
-      const mockUser: User = {
-        id: "user_" + Date.now(),
-        email: userData.email,
-        name: userData.name,
-        phone: userData.phone,
-        nationalId: userData.nationalId,
-        role: "user", // New users start as regular users
-        dateJoined: new Date().toISOString()
+      // Check if user is already registered
+      if (UserRegistry.isUserRegistered(userData.email)) {
+        setLoading(false)
+        return { success: false, error: 'Account already exists. Please sign in instead.' }
       }
+
+      // Register the user
+      const newUser = UserRegistry.registerUser(userData)
+      
+      console.log("New user registered:", newUser)
+
+      // Mark as first login
+      const userWithFirstLogin = {...newUser, isFirstLogin: true}
 
       // Only access localStorage on client side
       if (typeof window !== 'undefined') {
-        localStorage.setItem('authUser', JSON.stringify(mockUser))
+        localStorage.setItem('authUser', JSON.stringify(userWithFirstLogin))
+        // Don't set hasLoggedIn flag yet - this will be set on first login
       }
       
-      setUser(mockUser)
+      setUser(userWithFirstLogin as User & { isFirstLogin: boolean })
       return { success: true }
     } catch (error) {
       console.error("Registration failed:", error)

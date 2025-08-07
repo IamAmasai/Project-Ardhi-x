@@ -44,9 +44,13 @@ export default function DashboardPage() {
     <DashboardLayout>
       <div className="space-y-6 md:space-y-8">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome back, {user.name}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            {(user as any)?.isFirstLogin ? `Welcome to ArdhiX, ${user.name}!` : `Welcome back, ${user.name}`}
+          </h1>
           <p className="text-muted-foreground">
-            Here's an overview of your land registry activities and properties.
+            {(user as any)?.isFirstLogin 
+              ? "Let's get you started with your land registry journey."
+              : "Here's an overview of your land registry activities and properties."}
           </p>
         </div>
 

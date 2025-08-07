@@ -19,7 +19,7 @@ import {
   Shield,
   UserCheck
 } from "lucide-react"
-import { isAdmin } from "@/lib/access-control"
+import { isAdmin, canApproveProperty, canManageDocument } from "@/lib/access-control"
 import { AdminUserService } from "@/lib/admin-user-service"
 import { DocumentHistoryService } from "@/lib/document-history-service"
 import { PropertyService } from "@/lib/property-service"
@@ -173,37 +173,48 @@ export default function AdminPage() {
 
                 <div className="space-y-3">
                   {allProperties.map((property) => 
-                    property.documents.map((doc) => (
-                      <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center">
-                            <FileText className="h-5 w-5 text-muted-foreground" />
+                    property.documents.map((doc) => {
+                      const canManageThisDoc = canManageDocument(user, property.userId)
+                      return (
+                        <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center">
+                              <FileText className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                            <div>
+                              <h3 className="font-medium">{doc.name}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                Property: {property.title} • Uploaded: {new Date(doc.uploadedAt).toLocaleDateString()}
+                                {property.userId === user?.id && (
+                                  <span className="ml-2 text-yellow-600 font-medium">(Your Property)</span>
+                                )}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="font-medium">{doc.name}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              Property: {property.title} • Uploaded: {new Date(doc.uploadedAt).toLocaleDateString()}
-                            </p>
+                          <div className="flex items-center gap-2">
+                            <Badge 
+                              variant={doc.status === 'approved' ? 'default' : doc.status === 'pending' ? 'secondary' : 'destructive'}
+                            >
+                              {doc.status}
+                            </Badge>
+                            <Button variant="ghost" size="icon">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              disabled={!canManageThisDoc}
+                              title={!canManageThisDoc ? "Cannot manage your own documents" : "Delete document"}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge 
-                            variant={doc.status === 'approved' ? 'default' : doc.status === 'pending' ? 'secondary' : 'destructive'}
-                          >
-                            {doc.status}
-                          </Badge>
-                          <Button variant="ghost" size="icon">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon">
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))
+                      )
+                    })
                   )}
                 </div>
               </CardContent>

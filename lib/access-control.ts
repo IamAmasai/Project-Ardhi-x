@@ -22,8 +22,23 @@ export const canViewAllSystemActivity = (user: User | null): boolean => {
 
 export const canManageDocument = (user: User | null, documentUserId?: string): boolean => {
   if (!user) return false
-  if (isAdmin(user)) return true
+  if (isAdmin(user)) {
+    // Admins can manage documents but not their own to prevent conflict of interest
+    return documentUserId !== undefined && user.id !== documentUserId
+  }
   return user.id === documentUserId
+}
+
+export const canApproveProperty = (user: User | null, propertyOwnerId?: string): boolean => {
+  if (!user) return false
+  // Only admins can approve properties, but not their own
+  return isAdmin(user) && propertyOwnerId !== undefined && user.id !== propertyOwnerId
+}
+
+export const canRejectProperty = (user: User | null, propertyOwnerId?: string): boolean => {
+  if (!user) return false
+  // Only admins can reject properties, but not their own
+  return isAdmin(user) && propertyOwnerId !== undefined && user.id !== propertyOwnerId
 }
 
 export const canViewUserData = (user: User | null, targetUserId: string): boolean => {

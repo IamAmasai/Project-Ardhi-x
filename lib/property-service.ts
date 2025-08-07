@@ -2,10 +2,10 @@ import { Property, PropertyDocument, UserStats } from '@/types/auth'
 
 // In-memory storage for properties (replace with database in production)
 let properties: Property[] = [
-  // Sample properties for demo admin user
+  // Sample properties for demo user Dennis
   {
     id: 'prop_001',
-    userId: 'admin_001',
+    userId: 'user_dennis_001', // Updated to match Dennis's actual user ID
     title: 'Residential Plot - Westlands',
     type: 'residential',
     location: 'Westlands, Nairobi',
@@ -33,7 +33,7 @@ let properties: Property[] = [
   },
   {
     id: 'prop_002',
-    userId: 'admin_001',
+    userId: 'user_dennis_001', // Updated to match Dennis's actual user ID
     title: 'Commercial Land - Mombasa',
     type: 'commercial',
     location: 'Mombasa, Kenya',
