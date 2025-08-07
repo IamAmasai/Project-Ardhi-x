@@ -80,8 +80,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       console.log("Setting user data:", registeredUser)
 
-      // Track if this is user's first login after registration
-      const isFirstLogin = !localStorage.getItem(`user_${registeredUser.id}_hasLoggedIn`)
+      // For pre-existing users (not created today), they are not first-time users
+      const userCreatedToday = registeredUser.dateJoined.startsWith(new Date().toISOString().split('T')[0])
+      const isFirstLogin = userCreatedToday ? !localStorage.getItem(`user_${registeredUser.id}_hasLoggedIn`) : false
       
       // Only access localStorage on client side
       if (typeof window !== 'undefined') {
